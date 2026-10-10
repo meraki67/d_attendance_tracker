@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#0f172a" />
   <title>Attendance Tracker</title>
-  <link rel="stylesheet" href="css/style.css?v=8" />
+  <link rel="stylesheet" href="css/style.css?v=9" />
 </head>
 <body>
   <div id="app">
@@ -21,7 +21,21 @@
           <label>Position</label><input id="registerPosition" type="text" placeholder="e.g. IT Staff" />
         </div>
         <label>Email</label><input id="authEmail" type="email" placeholder="you@example.com" autocomplete="email" />
-        <label>Password</label><input id="authPassword" type="password" placeholder="Minimum 6 characters" autocomplete="current-password" />
+        <label>Password</label>
+        <div class="password-field">
+          <input id="authPassword" type="password" placeholder="Enter your password" autocomplete="current-password" />
+          <button id="togglePasswordBtn" class="password-toggle" type="button" aria-label="Show password" title="Show password">
+            <span id="passwordEyeIcon" aria-hidden="true">👁</span>
+          </button>
+        </div>
+        <div id="passwordRules" class="password-rules hidden" aria-live="polite">
+          <p class="password-rules-title">Password must contain:</p>
+          <div class="password-rule" data-rule="length">○ At least 8 characters</div>
+          <div class="password-rule" data-rule="upper">○ At least 1 uppercase letter</div>
+          <div class="password-rule" data-rule="lower">○ At least 1 lowercase letter</div>
+          <div class="password-rule" data-rule="number">○ At least 1 number</div>
+          <div class="password-rule" data-rule="special">○ At least 1 special character</div>
+        </div>
         <button id="authSubmitBtn" class="btn primary full">Login</button>
         <button id="authSwitchBtn" class="auth-switch" type="button">Create an account</button>
         <p id="authMessage" class="auth-message hidden"></p>
