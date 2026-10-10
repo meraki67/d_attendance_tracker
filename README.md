@@ -56,3 +56,9 @@ No npm install or build command is needed.
 
 ## Existing local-only data
 V7 localStorage records are **not automatically uploaded**. Export them from the old V7 app first, then use **Import Backup** after logging into V8.
+
+## V10 responsive navigation
+- Mobile/small tablets use a centered floating bottom navigation dock.
+- Desktop/laptop (900px and wider) uses a left sidebar.
+- Desktop sidebar can collapse with a slide animation; icons remain visible while labels are hidden.
+- The collapsed/expanded sidebar preference is remembered in the browser.
