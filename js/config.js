@@ -1,4 +1,4 @@
 window.SUPABASE_CONFIG = {
-  url: 'PASTE_YOUR_SUPABASE_PROJECT_URL_HERE',
-  key: 'PASTE_YOUR_SUPABASE_PUBLISHABLE_OR_ANON_KEY_HERE'
+  url: "https://tdeoresckkskohfhqyhy.supabase.co",
+  key: "sb_publishable_FSKI2HadXG0qQbyPMST4PQ_CwaV8IOR",
 };

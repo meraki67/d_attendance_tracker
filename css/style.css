@@ -218,3 +218,66 @@
 :root[data-theme="dark"] .setup-card{background:#111827}:root[data-theme="dark"] .auth-switch{color:#93c5fd}
 
 @media(max-width:560px){.profile-avatar-wrap,.profile-avatar-preview{width:76px;height:76px}.profile-avatar-wrap{flex-basis:76px}.profile-avatar-preview{border-radius:23px}.theme-toggle{gap:8px}}
+
+
+/* V13 animated hamburger sidebar toggle */
+@media (min-width: 861px){
+  .sidebar-toggle{
+    display:grid;
+    place-items:center;
+    padding:0;
+    overflow:hidden;
+  }
+  .hamburger-icon{
+    width:18px;
+    height:16px;
+    position:relative;
+    display:block;
+  }
+  .hamburger-line{
+    position:absolute;
+    left:0;
+    width:18px;
+    height:2px;
+    border-radius:999px;
+    background:currentColor;
+    transform-origin:center;
+    transition:
+      top .28s cubic-bezier(.22,1,.36,1),
+      transform .28s cubic-bezier(.22,1,.36,1),
+      width .28s cubic-bezier(.22,1,.36,1),
+      left .28s cubic-bezier(.22,1,.36,1),
+      opacity .18s ease;
+  }
+  .hamburger-line.line-1{top:1px}
+  .hamburger-line.line-2{top:7px}
+  .hamburger-line.line-3{top:13px}
+
+  .sidebar-toggle:hover .hamburger-line.line-1{transform:translateX(-1px)}
+  .sidebar-toggle:hover .hamburger-line.line-3{transform:translateX(1px)}
+  .sidebar-toggle:active .hamburger-icon{transform:scale(.9)}
+  .hamburger-icon{transition:transform .18s ease}
+
+  /* collapsed state: hamburger morphs into a right-facing reopen arrow */
+  #mainApp.sidebar-collapsed .sidebar-toggle{transform:translateY(-50%);}
+  #mainApp.sidebar-collapsed .hamburger-line.line-1{
+    top:4px;
+    left:5px;
+    width:12px;
+    transform:rotate(38deg);
+  }
+  #mainApp.sidebar-collapsed .hamburger-line.line-2{
+    top:7px;
+    left:0;
+    width:17px;
+    transform:translateX(0);
+  }
+  #mainApp.sidebar-collapsed .hamburger-line.line-3{
+    top:10px;
+    left:5px;
+    width:12px;
+    transform:rotate(-38deg);
+  }
+  #mainApp.sidebar-collapsed .sidebar-toggle:hover .hamburger-line.line-1{transform:rotate(38deg) translateX(1px)}
+  #mainApp.sidebar-collapsed .sidebar-toggle:hover .hamburger-line.line-3{transform:rotate(-38deg) translateX(1px)}
+}
