@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#0f172a" />
   <title>Attendance Tracker</title>
-  <link rel="stylesheet" href="css/style.css?v=10" />
+  <link rel="stylesheet" href="css/style.css?v=11" />
 </head>
 <body>
   <div id="app">
@@ -53,10 +53,18 @@
           <button id="sidebarToggle" class="sidebar-toggle" type="button" aria-label="Collapse sidebar" title="Collapse sidebar">‹</button>
         </div>
         <nav class="sidebar-nav">
-          <button class="nav-item sidebar-nav-item active" data-view="dashboardView"><span class="nav-icon">⌂</span><span class="nav-label">Dashboard</span></button>
-          <button class="nav-item sidebar-nav-item" data-view="attendanceView"><span class="nav-icon">✓</span><span class="nav-label">Attendance</span></button>
-          <button class="nav-item sidebar-nav-item" data-view="historyView"><span class="nav-icon">◷</span><span class="nav-label">History</span></button>
-          <button class="nav-item sidebar-nav-item" data-view="profileView"><span class="nav-icon">●</span><span class="nav-label">Profile</span></button>
+          <button class="nav-item sidebar-nav-item active" data-view="dashboardView" data-label="Dashboard" aria-label="Dashboard">
+            <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.5V20h13v-9.5"/><path d="M9.5 20v-6h5v6"/></svg></span><span class="nav-label">Dashboard</span>
+          </button>
+          <button class="nav-item sidebar-nav-item" data-view="attendanceView" data-label="Attendance" aria-label="Attendance">
+            <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 9h16"/><path d="m8.5 14 2 2 4.5-4.5"/></svg></span><span class="nav-label">Attendance</span>
+          </button>
+          <button class="nav-item sidebar-nav-item" data-view="historyView" data-label="History" aria-label="History">
+            <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 4v4h4"/><path d="M12 7v5l3 2"/></svg></span><span class="nav-label">History</span>
+          </button>
+          <button class="nav-item sidebar-nav-item" data-view="profileView" data-label="Profile" aria-label="Profile">
+            <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.7-4 3-6 7-6s6.3 2 7 6"/></svg></span><span class="nav-label">Profile</span>
+          </button>
         </nav>
         <div class="sidebar-footer">
           <span class="sidebar-footer-icon">☁</span>
@@ -191,10 +199,10 @@
       </main>
 
       <nav class="bottom-nav" aria-label="Mobile navigation">
-        <button class="nav-item active" data-view="dashboardView"><span class="nav-icon">⌂</span><span>Dashboard</span></button>
-        <button class="nav-item" data-view="attendanceView"><span class="nav-icon">✓</span><span>Attendance</span></button>
-        <button class="nav-item" data-view="historyView"><span class="nav-icon">◷</span><span>History</span></button>
-        <button class="nav-item" data-view="profileView"><span class="nav-icon">●</span><span>Profile</span></button>
+        <button class="nav-item active" data-view="dashboardView"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.5V20h13v-9.5"/><path d="M9.5 20v-6h5v6"/></svg></span><span>Dashboard</span></button>
+        <button class="nav-item" data-view="attendanceView"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 9h16"/><path d="m8.5 14 2 2 4.5-4.5"/></svg></span><span>Attendance</span></button>
+        <button class="nav-item" data-view="historyView"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 4v4h4"/><path d="M12 7v5l3 2"/></svg></span><span>History</span></button>
+        <button class="nav-item" data-view="profileView"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.7-4 3-6 7-6s6.3 2 7 6"/></svg></span><span>Profile</span></button>
       </nav>
     </section>
   </div>
@@ -233,6 +241,6 @@
   <div id="toast" class="toast hidden"></div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="js/config.js?v=10"></script>
-  <script src="js/app.js?v=10"></script>
+  <script src="js/app.js?v=11"></script>
 </body>
 </html>
