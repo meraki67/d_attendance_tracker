@@ -186,3 +186,35 @@
   .content{padding-bottom:120px}
   .fab{bottom:94px}
 }
+
+/* V12 avatar, themes and military-time selectors */
+.time-select{appearance:auto;font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.profile-identity{display:flex;align-items:center;gap:16px;padding:4px 0 12px}
+.profile-avatar-wrap{position:relative;width:86px;height:86px;flex:0 0 86px}
+.profile-avatar-preview{width:86px;height:86px;border-radius:26px;background:linear-gradient(145deg,#111827,#334155);color:#fff;display:grid;place-items:center;font-size:26px;font-weight:900;overflow:hidden;box-shadow:0 12px 28px rgba(15,23,42,.18);border:3px solid var(--card)}
+.profile-avatar-preview img,.avatar-img{width:100%;height:100%;object-fit:cover;display:block}
+.avatar-edit-btn{position:absolute;right:-3px;bottom:-3px;width:34px;height:34px;border-radius:12px;border:3px solid var(--card);background:var(--primary);color:#fff;display:grid;place-items:center;box-shadow:0 7px 18px rgba(15,23,42,.22)}
+.avatar-edit-btn svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.profile-identity-copy{display:flex;flex-direction:column;gap:4px;min-width:0}.profile-identity-copy strong{font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.avatar{overflow:hidden;padding:0;display:grid;place-items:center}.avatar img{border-radius:inherit}
+.theme-toggle{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}.theme-option{border:1px solid var(--border);background:var(--card);color:var(--text);border-radius:15px;padding:12px 14px;font-weight:800;transition:.18s ease}.theme-option:hover{transform:translateY(-1px);box-shadow:var(--shadow)}.theme-option.active{background:var(--primary);border-color:var(--primary);color:#fff}.theme-option span{margin-right:6px}
+
+:root[data-theme="dark"]{--bg:#0b1220;--card:#111827;--text:#e5edf8;--muted:#94a3b8;--primary:#f8fafc;--border:#263247;--shadow:0 14px 35px rgba(0,0,0,.28)}
+:root[data-theme="dark"] body{background:var(--bg);color:var(--text)}
+:root[data-theme="dark"] input,:root[data-theme="dark"] select,:root[data-theme="dark"] textarea{background:#0f172a;color:var(--text);border-color:var(--border);color-scheme:dark}
+:root[data-theme="dark"] .topbar{background:rgba(11,18,32,.9);border-bottom-color:rgba(51,65,85,.7)}
+:root[data-theme="dark"] .cutoff-card,:root[data-theme="dark"] .panel{border-color:#1f2a3d}
+:root[data-theme="dark"] .record-item,:root[data-theme="dark"] .attendance-record-card{border-bottom-color:#243047;color:var(--text)}
+:root[data-theme="dark"] .icon-btn,:root[data-theme="dark"] .pill-btn{background:#1e293b;color:#e2e8f0}
+:root[data-theme="dark"] .btn.secondary{background:#1e293b;color:#e2e8f0}
+:root[data-theme="dark"] .btn.primary{background:#f8fafc;color:#0f172a}
+:root[data-theme="dark"] .progress{background:#243047}:root[data-theme="dark"] .progress>div{background:#e2e8f0}
+:root[data-theme="dark"] .modal{background:rgba(2,6,23,.72)}:root[data-theme="dark"] .modal-card{background:#111827;color:var(--text)}
+:root[data-theme="dark"] .bottom-nav{background:rgba(15,23,42,.94);border-color:#263247}:root[data-theme="dark"] .bottom-nav .nav-item{color:#8290a6}:root[data-theme="dark"] .bottom-nav .nav-item.active{background:#f8fafc;color:#0f172a}
+:root[data-theme="dark"] .schedule-chip{background:#1e293b;color:#cbd5e1}:root[data-theme="dark"] .shift-option{background:#0f172a;color:#cbd5e1;border-color:#263247}:root[data-theme="dark"] .shift-option.active{background:#f8fafc;color:#0f172a}
+:root[data-theme="dark"] .dayoff-picker label span{background:#0f172a;border-color:#263247;color:#cbd5e1}:root[data-theme="dark"] .dayoff-picker input:checked+span{background:#f8fafc;color:#0f172a;border-color:#f8fafc}
+:root[data-theme="dark"] .profile-avatar-preview{border-color:#111827}:root[data-theme="dark"] .avatar-edit-btn{border-color:#111827;background:#f8fafc;color:#0f172a}
+:root[data-theme="dark"] .theme-option{background:#0f172a;border-color:#263247;color:#cbd5e1}:root[data-theme="dark"] .theme-option.active{background:#f8fafc;border-color:#f8fafc;color:#0f172a}
+:root[data-theme="dark"] .setup-card{background:#111827}:root[data-theme="dark"] .auth-switch{color:#93c5fd}
+
+@media(max-width:560px){.profile-avatar-wrap,.profile-avatar-preview{width:76px;height:76px}.profile-avatar-wrap{flex-basis:76px}.profile-avatar-preview{border-radius:23px}.theme-toggle{gap:8px}}

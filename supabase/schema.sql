@@ -75,3 +75,11 @@ create policy "attendance_delete_own" on public.attendance for delete to authent
 using ((select auth.uid()) = user_id);
 
 create index if not exists attendance_user_date_idx on public.attendance(user_id, date desc);
+
+-- V12 profile appearance additions (safe to run on existing projects)
+alter table public.profiles add column if not exists avatar_data text not null default '';
+alter table public.profiles add column if not exists theme text not null default 'light';
+do $$ begin
+  alter table public.profiles add constraint profiles_theme_check check (theme in ('light','dark'));
+exception when duplicate_object then null;
+end $$;
