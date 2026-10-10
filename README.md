@@ -1,39 +1,58 @@
-# Local Attendance Tracker — Web Edition
+# Attendance Tracker V8 — GitHub Pages + Supabase
 
-Pure static HTML/CSS/JavaScript attendance tracker designed for GitHub Pages.
+This version replaces the startup profile screen with **Login / Register** and stores each user's profile, schedule, attendance and OT records in Supabase so the same account can be used on different devices.
 
-## Features
-- First-run setup: Name and Position only
-- Manage Schedule in Profile: Day/Night shift, editable Shift Start/End, weekly Day Off selection
-- Default Day preset: 06:00–15:00; Night preset: 18:00–03:00 (both editable)
-- Day Off suggestion when manually adding attendance on a configured regular day off
-- Dashboard by cutoff (6–20 and 21–5)
-- Present, Late, Absent, Day Off, Leave, Holiday, Half Day
-- 24-hour / military time
-- Automatic late-minute calculation from configured Shift Start
-- Manual add attendance for previous dates
-- Daily Records: tap/click a record to edit full attendance details
-- OT Start/End and automatic OT hours
-- Search/filter records
-- Cutoff history
-- JSON backup and restore
-- Local-only browser storage; no server/database required
+## 1. Create a Supabase project
+Create a project in Supabase, then open **SQL Editor** and run the complete file:
 
-## Run locally
-Open `index.html` directly in a modern browser, or use a simple local HTTP server:
+`supabase/schema.sql`
 
-```bash
-python -m http.server 8080
+The schema enables Row Level Security. Logged-in users can only access rows whose `user_id` matches their own Supabase Auth ID.
+
+## 2. Copy your browser-safe Supabase credentials
+In Supabase Dashboard, copy your:
+
+- Project URL
+- Publishable key (or legacy `anon` key)
+
+Do **not** put a `service_role` or secret key in this GitHub Pages app.
+
+Edit `js/config.js`:
+
+```js
+window.SUPABASE_CONFIG = {
+  url: 'https://YOUR_PROJECT.supabase.co',
+  key: 'YOUR_PUBLISHABLE_OR_ANON_KEY'
+};
 ```
 
-Then open `http://localhost:8080`.
+## 3. Configure Auth
+In Supabase Authentication settings:
 
-## Deploy to GitHub Pages
-1. Create a GitHub repository.
-2. Upload all files from this folder to the repository root.
-3. Go to **Settings → Pages**.
-4. Choose **Deploy from a branch**.
-5. Select `main` and `/(root)` then Save.
+- Email/password sign-in must be enabled.
+- If Email Confirmation is ON, new users must confirm the email before logging in.
+- Add your GitHub Pages URL to the allowed Site URL / Redirect URLs if you use email confirmation links.
 
-## Important data note
-Attendance data is stored in that browser/device using `localStorage`. GitHub Pages hosts the app but does not sync data between devices. Use **Profile → Export Backup** regularly.
+## 4. Upload to GitHub Pages
+Replace the old repo files with the contents of this folder and commit to your Pages branch/root.
+
+No npm install or build command is needed.
+
+## Included
+- Login / Register
+- Persistent login session
+- Per-user cloud-synced attendance
+- Profile + Position
+- Day / Night schedule
+- Weekly Day Off manager
+- Present / Late / Absent / Day Off / Leave / Holiday / Half Day
+- OT start/end and total hours
+- Previous-date manual attendance
+- Editable Daily Records
+- Cutoff dashboard and history
+- JSON export/import
+- Logout
+- Clear current user's attendance data
+
+## Existing local-only data
+V7 localStorage records are **not automatically uploaded**. Export them from the old V7 app first, then use **Import Backup** after logging into V8.
