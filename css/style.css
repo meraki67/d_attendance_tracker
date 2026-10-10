@@ -281,3 +281,90 @@
   #mainApp.sidebar-collapsed .sidebar-toggle:hover .hamburger-line.line-1{transform:rotate(38deg) translateX(1px)}
   #mainApp.sidebar-collapsed .sidebar-toggle:hover .hamburger-line.line-3{transform:rotate(-38deg) translateX(1px)}
 }
+
+/* V14 sidebar cleanup: no logo, integrated animated hamburger */
+@media (min-width:900px){
+  .sidebar-logo{display:none!important}
+  .sidebar-brand{
+    height:68px!important;
+    padding:10px 8px 14px!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:flex-start!important;
+    gap:12px!important;
+    overflow:hidden!important;
+  }
+  .sidebar-toggle{
+    position:relative!important;
+    right:auto!important;
+    top:auto!important;
+    transform:none!important;
+    width:42px!important;
+    height:42px!important;
+    flex:0 0 42px!important;
+    border:1px solid rgba(255,255,255,.08)!important;
+    border-radius:12px!important;
+    background:rgba(255,255,255,.045)!important;
+    color:#cbd5e1!important;
+    box-shadow:none!important;
+    display:grid!important;
+    place-items:center!important;
+    transition:background .2s ease,color .2s ease,border-color .2s ease,transform .22s cubic-bezier(.22,1,.36,1)!important;
+  }
+  .sidebar-toggle:hover{
+    background:rgba(255,255,255,.10)!important;
+    border-color:rgba(255,255,255,.14)!important;
+    color:#fff!important;
+    box-shadow:none!important;
+  }
+  .sidebar-toggle:active{transform:scale(.94)!important}
+  .sidebar-brand-copy{
+    padding-right:0!important;
+    opacity:1!important;
+    transform:translateX(0)!important;
+    max-width:150px!important;
+    transition:opacity .18s ease,transform .28s cubic-bezier(.22,1,.36,1),max-width .3s cubic-bezier(.22,1,.36,1)!important;
+  }
+  .sidebar-brand-copy strong{font-size:14px!important;color:#f8fafc}
+  .sidebar-brand-copy span{font-size:10px!important;color:#94a3b8}
+
+  #mainApp.sidebar-collapsed .sidebar-brand{
+    justify-content:center!important;
+    padding-left:0!important;
+    padding-right:0!important;
+  }
+  #mainApp.sidebar-collapsed .sidebar-brand-copy{
+    display:flex!important;
+    opacity:0!important;
+    max-width:0!important;
+    transform:translateX(-8px)!important;
+    pointer-events:none!important;
+    overflow:hidden!important;
+  }
+  #mainApp.sidebar-collapsed .sidebar-toggle{
+    right:auto!important;
+    transform:none!important;
+    margin:0 auto!important;
+  }
+
+  .hamburger-icon{width:19px!important;height:16px!important;transition:transform .2s ease!important}
+  .hamburger-line{width:19px!important;height:2px!important;background:currentColor!important}
+  .hamburger-line.line-1{top:1px!important;left:0!important}
+  .hamburger-line.line-2{top:7px!important;left:0!important}
+  .hamburger-line.line-3{top:13px!important;left:0!important}
+  .sidebar-toggle:hover .hamburger-line.line-1,
+  .sidebar-toggle:hover .hamburger-line.line-3{transform:none!important}
+
+  /* collapsed: morph hamburger into a subtle right chevron */
+  #mainApp.sidebar-collapsed .hamburger-line.line-1{
+    top:3px!important;left:5px!important;width:12px!important;transform:rotate(42deg)!important
+  }
+  #mainApp.sidebar-collapsed .hamburger-line.line-2{
+    top:7px!important;left:1px!important;width:16px!important;transform:none!important;opacity:.9!important
+  }
+  #mainApp.sidebar-collapsed .hamburger-line.line-3{
+    top:11px!important;left:5px!important;width:12px!important;transform:rotate(-42deg)!important
+  }
+  #mainApp.sidebar-collapsed .sidebar-toggle:hover .hamburger-line.line-1{transform:rotate(42deg) translateX(1px)!important}
+  #mainApp.sidebar-collapsed .sidebar-toggle:hover .hamburger-line.line-3{transform:rotate(-42deg) translateX(1px)!important}
+}
