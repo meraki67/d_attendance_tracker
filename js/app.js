@@ -12,7 +12,7 @@ function parseLocalDate(str){const [y,m,d]=str.split('-').map(Number);return new
 function fmtDate(str, opts={month:'short',day:'numeric',year:'numeric'}){return parseLocalDate(str).toLocaleDateString('en-US',opts)}
 function fmtTime(t){if(!t)return '—'; return t.slice(0,5)}
 function minutes(t){if(!t)return 0; const [h,m]=t.split(':').map(Number); return h*60+m}
-function getLateMinutes(timeIn){return Math.max(0, minutes(timeIn)-minutes(profile?.shiftStart || '06:00'))}
+function getLateMinutes(timeIn){return Math.max(0, minutes(timeIn)-minutes(profile?.shiftStart || (profile?.shiftType==='night'?'18:00':'06:00')))}
 function getOTMinutes(start,end){
   if(!start||!end)return 0;
   let a=minutes(start), b=minutes(end);
@@ -47,7 +47,14 @@ function inCutoff(r,c){const d=parseLocalDate(r.date);return d>=c.start&&d<=c.en
 function cutoffLabel(c){const sameMonth=c.start.getMonth()===c.end.getMonth();const s=c.start.toLocaleDateString('en-US',{month:'short',day:'numeric'});const e=c.end.toLocaleDateString('en-US',{month:sameMonth?undefined:'short',day:'numeric',year:'numeric'});return `${s} – ${e}`}
 
 function showSetup(){ $('setupScreen').classList.remove('hidden'); $('mainApp').classList.add('hidden') }
-function showMain(){ $('setupScreen').classList.add('hidden'); $('mainApp').classList.remove('hidden'); renderAll() }
+function normalizeProfile(){
+  if(!profile)return;
+  profile.shiftType=profile.shiftType||((profile.shiftStart||'06:00')>='12:00'?'night':'day');
+  profile.shiftStart=profile.shiftStart||(profile.shiftType==='night'?'18:00':'06:00');
+  profile.shiftEnd=profile.shiftEnd||(profile.shiftType==='night'?'03:00':'15:00');
+  profile.dayOffs=Array.isArray(profile.dayOffs)?profile.dayOffs:[];
+}
+function showMain(){ normalizeProfile(); $('setupScreen').classList.add('hidden'); $('mainApp').classList.remove('hidden'); renderAll() }
 function greeting(){const h=new Date().getHours();return h<12?'GOOD MORNING':h<18?'GOOD AFTERNOON':'GOOD EVENING'}
 function initials(name='U'){return name.split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join('').toUpperCase()}
 
@@ -87,17 +94,40 @@ function renderHistory(){
   const arr=[...groups.values()].sort((a,b)=>b.c.start-a.c.start);
   $('historyList').innerHTML=arr.map(g=>{const s=summarize(g.rs);return `<div class="history-card"><strong>${cutoffLabel(g.c)}</strong><div class="history-stats"><span>Present ${s.Present}</span><span>Late ${s.Late}</span><span>Absent ${s.Absent}</span><span>Day Off ${s['Day Off']}</span><span>Leave ${s.Leave}</span><span>OT ${formatOT(s.otMinutes)} hrs</span><span>Rate ${s.rate}%</span></div></div>`}).join('');
 }
-function renderProfile(){ $('profileName').value=profile.name||''; $('profilePosition').value=profile.position||''; $('profileShiftStart').value=profile.shiftStart||'06:00'; $('profileShiftEnd').value=profile.shiftEnd||'15:00' }
+function renderProfile(){
+  normalizeProfile();
+  $('profileName').value=profile.name||'';
+  $('profilePosition').value=profile.position||'';
+  $('profileShiftStart').value=profile.shiftStart;
+  $('profileShiftEnd').value=profile.shiftEnd;
+  document.querySelectorAll('.shift-option').forEach(b=>b.classList.toggle('active',b.dataset.shift===profile.shiftType));
+  document.querySelectorAll('#dayOffPicker input[type=checkbox]').forEach(cb=>cb.checked=profile.dayOffs.includes(Number(cb.value)));
+  $('scheduleSummary').textContent=`${profile.shiftType==='night'?'Night':'Day'} Shift • ${fmtTime(profile.shiftStart)}–${fmtTime(profile.shiftEnd)}`;
+}
 function renderAll(){renderHeader();renderDashboard();renderAttendance();renderHistory();renderProfile();bindDynamicRows()}
 function bindDynamicRows(){
   document.querySelectorAll('[data-edit]').forEach(el=>el.onclick=()=>openModal(el.dataset.edit));
 }
 function switchView(id){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===id));document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.view===id));if(id==='attendanceView')renderAttendance();if(id==='historyView')renderHistory();if(id==='profileView')renderProfile()}
+function isConfiguredDayOff(dateStr){
+  if(!dateStr||!Array.isArray(profile?.dayOffs))return false;
+  return profile.dayOffs.includes(parseLocalDate(dateStr).getDay());
+}
+function applyDayOffSuggestion(){
+  if($('recordId').value)return;
+  const date=$('recordDate').value;
+  if(isConfiguredDayOff(date)){
+    $('recordStatus').value='Day Off';
+    updateTimeFields();
+    updateLatePreview();
+    toast('Configured day off detected');
+  }
+}
 function openModal(id=null){
   const r=id?records.find(x=>x.id===id):null;
   $('recordId').value=r?.id||''; $('modalTitle').textContent=r?'Edit Attendance':'Manual Add Attendance'; $('recordDate').max=localDateStr(); $('recordDate').value=r?.date||localDateStr(); $('recordStatus').value=r?.status==='Late'?'Present':(r?.status||'Present'); $('recordTimeIn').value=r?.timeIn||''; $('recordTimeOut').value=r?.timeOut||''; $('recordRemarks').value=r?.remarks||'';
   $('recordHasOT').checked=!!r?.hasOT; $('recordOTStart').value=r?.otStart||''; $('recordOTEnd').value=r?.otEnd||'';
-  $('deleteRecordBtn').classList.toggle('hidden',!r); $('attendanceModal').classList.remove('hidden'); updateTimeFields(); updateLatePreview(); updateOTFields();
+  $('deleteRecordBtn').classList.toggle('hidden',!r); $('attendanceModal').classList.remove('hidden'); updateTimeFields(); updateLatePreview(); updateOTFields(); if(!r) applyDayOffSuggestion();
 }
 function closeModal(){$('attendanceModal').classList.add('hidden')}
 function updateTimeFields(){const show=['Present','Half Day'].includes($('recordStatus').value);$('timeFields').classList.toggle('hidden',!show);if(!show)$('latePreview').classList.add('hidden')}
@@ -110,11 +140,11 @@ function updateOTFields(){
 }
 function toast(msg){$('toast').textContent=msg;$('toast').classList.remove('hidden');setTimeout(()=>$('toast').classList.add('hidden'),1800)}
 
-$('continueBtn').onclick=()=>{const name=$('setupName').value.trim(),pos=$('setupPosition').value.trim();if(!name||!pos)return toast('Please enter Name and Position');profile={name,position:pos,shiftStart:$('setupShiftStart').value||'06:00',shiftEnd:$('setupShiftEnd').value||'15:00'};storage.saveProfile(profile);showMain()};
+$('continueBtn').onclick=()=>{const name=$('setupName').value.trim(),pos=$('setupPosition').value.trim();if(!name||!pos)return toast('Please enter Name and Position');profile={name,position:pos,shiftType:'day',shiftStart:'06:00',shiftEnd:'15:00',dayOffs:[]};storage.saveProfile(profile);showMain()};
 $('profileQuickBtn').onclick=()=>switchView('profileView'); document.querySelectorAll('.nav-item').forEach(n=>n.onclick=()=>switchView(n.dataset.view));
 $('prevCutoffBtn').onclick=()=>{cutoffOffset--;renderDashboard();bindDynamicRows()};$('nextCutoffBtn').onclick=()=>{cutoffOffset++;renderDashboard();bindDynamicRows()};$('currentCutoffBtn').onclick=()=>{cutoffOffset=0;renderDashboard();bindDynamicRows()};
 $('addAttendanceBtn').onclick=()=>openModal();$('addAttendanceBtn2').onclick=()=>openModal();$('viewAllBtn').onclick=()=>switchView('attendanceView');$('closeModalBtn').onclick=closeModal;$('attendanceModal').onclick=e=>{if(e.target===$('attendanceModal'))closeModal()};
-$('recordStatus').onchange=()=>{updateTimeFields();updateLatePreview()};$('recordTimeIn').oninput=updateLatePreview;
+$('recordStatus').onchange=()=>{updateTimeFields();updateLatePreview()};$('recordDate').onchange=applyDayOffSuggestion;$('recordTimeIn').oninput=updateLatePreview;
 $('recordHasOT').onchange=updateOTFields; $('recordOTStart').oninput=updateOTFields; $('recordOTEnd').oninput=updateOTFields;
 $('saveRecordBtn').onclick=()=>{
   const date=$('recordDate').value,status=$('recordStatus').value,hasOT=$('recordHasOT').checked;
@@ -150,7 +180,24 @@ $('saveRecordBtn').onclick=()=>{
 };
 $('deleteRecordBtn').onclick=()=>{const id=$('recordId').value;if(!id)return; if(!confirm('Delete this attendance record?'))return;records=records.filter(r=>r.id!==id);storage.saveRecords(records);closeModal();renderAll();toast('Record deleted')};
 $('attendanceSearch').oninput=()=>{renderAttendance();bindDynamicRows()};$('statusFilter').onchange=()=>{renderAttendance();bindDynamicRows()};
-$('saveProfileBtn').onclick=()=>{const name=$('profileName').value.trim(),position=$('profilePosition').value.trim();if(!name||!position)return toast('Name and Position are required');profile={...profile,name,position,shiftStart:$('profileShiftStart').value||'06:00',shiftEnd:$('profileShiftEnd').value||'15:00'};storage.saveProfile(profile);renderAll();toast('Profile saved')};
+$('saveProfileBtn').onclick=()=>{const name=$('profileName').value.trim(),position=$('profilePosition').value.trim();if(!name||!position)return toast('Name and Position are required');profile={...profile,name,position};storage.saveProfile(profile);renderAll();toast('Profile saved')};
+function selectShiftType(type, applyPreset=true){
+  profile.shiftType=type;
+  document.querySelectorAll('.shift-option').forEach(b=>b.classList.toggle('active',b.dataset.shift===type));
+  if(applyPreset){
+    $('profileShiftStart').value=type==='night'?'18:00':'06:00';
+    $('profileShiftEnd').value=type==='night'?'03:00':'15:00';
+  }
+}
+$('dayShiftBtn').onclick=()=>selectShiftType('day');
+$('nightShiftBtn').onclick=()=>selectShiftType('night');
+$('saveScheduleBtn').onclick=()=>{
+  const shiftStart=$('profileShiftStart').value, shiftEnd=$('profileShiftEnd').value;
+  if(!shiftStart||!shiftEnd)return toast('Please set Shift Start and Shift End');
+  const dayOffs=[...document.querySelectorAll('#dayOffPicker input[type=checkbox]:checked')].map(cb=>Number(cb.value));
+  profile={...profile,shiftType:profile.shiftType||'day',shiftStart,shiftEnd,dayOffs};
+  storage.saveProfile(profile);renderAll();toast('Schedule saved');
+};
 $('exportBtn').onclick=()=>{const blob=new Blob([JSON.stringify(storage.exportData(),null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`attendance-backup-${localDateStr()}.json`;a.click();URL.revokeObjectURL(a.href);toast('Backup exported')};
 $('importInput').onchange=async e=>{const file=e.target.files?.[0];if(!file)return;try{const data=JSON.parse(await file.text());storage.importData(data);profile=storage.getProfile();records=storage.getRecords();renderAll();toast('Backup restored')}catch(err){toast(err.message||'Import failed')}finally{e.target.value=''}};
 $('resetBtn').onclick=()=>{if(!confirm('Reset profile and all attendance records? This cannot be undone unless you exported a backup.'))return;storage.reset();profile=null;records=[];showSetup();toast('App data reset')};

@@ -22,17 +22,6 @@
         <label>Position</label>
         <input id="setupPosition" type="text" placeholder="e.g. IT Staff" />
 
-        <div class="grid-2">
-          <div>
-            <label>Shift Start</label>
-            <input id="setupShiftStart" type="time" value="06:00" />
-          </div>
-          <div>
-            <label>Shift End</label>
-            <input id="setupShiftEnd" type="time" value="15:00" />
-          </div>
-        </div>
-
         <button id="continueBtn" class="btn primary full">Continue</button>
       </div>
     </section>
@@ -116,11 +105,41 @@
           <div class="panel form-panel">
             <label>Name</label><input id="profileName" type="text" />
             <label>Position</label><input id="profilePosition" type="text" />
+            <button id="saveProfileBtn" class="btn primary full">Save Profile</button>
+          </div>
+
+          <div class="panel schedule-panel">
+            <div class="panel-head">
+              <div>
+                <p class="muted tiny">WORK SCHEDULE</p>
+                <h3>Manage Schedule</h3>
+              </div>
+              <span id="scheduleSummary" class="schedule-chip">Day Shift</span>
+            </div>
+
+            <label>Shift Type</label>
+            <div class="shift-toggle" role="group" aria-label="Shift type">
+              <button id="dayShiftBtn" type="button" class="shift-option active" data-shift="day">☀ Day</button>
+              <button id="nightShiftBtn" type="button" class="shift-option" data-shift="night">☾ Night</button>
+            </div>
+
             <div class="grid-2">
               <div><label>Shift Start</label><input id="profileShiftStart" type="time" /></div>
               <div><label>Shift End</label><input id="profileShiftEnd" type="time" /></div>
             </div>
-            <button id="saveProfileBtn" class="btn primary full">Save Profile</button>
+
+            <label>Weekly Day Off</label>
+            <p class="muted small schedule-help">Select one or more regular days off. You can still manually override any date in Daily Records.</p>
+            <div id="dayOffPicker" class="dayoff-picker">
+              <label><input type="checkbox" value="0"><span>Sun</span></label>
+              <label><input type="checkbox" value="1"><span>Mon</span></label>
+              <label><input type="checkbox" value="2"><span>Tue</span></label>
+              <label><input type="checkbox" value="3"><span>Wed</span></label>
+              <label><input type="checkbox" value="4"><span>Thu</span></label>
+              <label><input type="checkbox" value="5"><span>Fri</span></label>
+              <label><input type="checkbox" value="6"><span>Sat</span></label>
+            </div>
+            <button id="saveScheduleBtn" class="btn secondary full">Save Schedule</button>
           </div>
 
           <div class="panel">
