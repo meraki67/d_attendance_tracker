@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f172a" />
+  <title>Attendance Tracker</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="app">
+    <section id="setupScreen" class="screen center-screen hidden">
+      <div class="setup-card">
+        <div class="brand-mark">AT</div>
+        <p class="eyebrow">LOCAL ATTENDANCE TRACKER</p>
+        <h1>Set up your profile</h1>
+        <p class="muted">Your data stays on this device unless you export a backup.</p>
+
+        <label>Name</label>
+        <input id="setupName" type="text" placeholder="e.g. Mackie Lacang" autocomplete="name" />
+
+        <label>Position</label>
+        <input id="setupPosition" type="text" placeholder="e.g. IT Staff" />
+
+        <div class="grid-2">
+          <div>
+            <label>Shift Start</label>
+            <input id="setupShiftStart" type="time" value="06:00" />
+          </div>
+          <div>
+            <label>Shift End</label>
+            <input id="setupShiftEnd" type="time" value="15:00" />
+          </div>
+        </div>
+
+        <button id="continueBtn" class="btn primary full">Continue</button>
+      </div>
+    </section>
+
+    <section id="mainApp" class="hidden">
+      <header class="topbar">
+        <div>
+          <p id="greeting" class="eyebrow">GOOD AFTERNOON</p>
+          <h2 id="headerName">User</h2>
+          <p id="headerPosition" class="muted small">Position</p>
+        </div>
+        <button id="profileQuickBtn" class="avatar">U</button>
+      </header>
+
+      <main class="content">
+        <section id="dashboardView" class="view active">
+          <div class="cutoff-card">
+            <div>
+              <p class="muted tiny">CURRENT CUTOFF</p>
+              <h3 id="cutoffLabel">—</h3>
+            </div>
+            <div class="cutoff-nav">
+              <button id="prevCutoffBtn" class="icon-btn">‹</button>
+              <button id="currentCutoffBtn" class="pill-btn">Current</button>
+              <button id="nextCutoffBtn" class="icon-btn">›</button>
+            </div>
+          </div>
+
+          <div class="stats-grid">
+            <div class="stat-card green"><span>Present</span><strong id="presentCount">0</strong></div>
+            <div class="stat-card orange"><span>Late</span><strong id="lateCount">0</strong></div>
+            <div class="stat-card red"><span>Absent</span><strong id="absentCount">0</strong></div>
+            <div class="stat-card blue"><span>Day Off</span><strong id="dayOffCount">0</strong></div>
+            <div class="stat-card purple"><span>Leave</span><strong id="leaveCount">0</strong></div>
+            <div class="stat-card slate"><span>Holiday</span><strong id="holidayCount">0</strong></div>
+            <div class="stat-card teal"><span>OT Hours</span><strong id="otHoursCount">0</strong></div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="muted tiny">ATTENDANCE RATE</p>
+                <h3 id="attendanceRate">0%</h3>
+              </div>
+              <div class="metric-right"><span id="lateMinutesTotal">0</span><small>late mins</small></div>
+            </div>
+            <div class="progress"><div id="attendanceProgress"></div></div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head"><h3>Recent Attendance</h3><button id="viewAllBtn" class="link-btn">View all</button></div>
+            <div id="recentList" class="record-list empty-state">No attendance records yet.</div>
+          </div>
+
+          <button id="addAttendanceBtn" class="fab modern-add"><span class="add-icon">＋</span><span class="add-copy"><strong>Add Attendance</strong><small>Manual entry</small></span></button>
+        </section>
+
+        <section id="attendanceView" class="view">
+          <div class="section-head">
+            <div><p class="muted tiny">DAILY RECORDS</p><h2>Attendance</h2></div>
+            <button id="addAttendanceBtn2" class="modern-inline-add"><span class="add-icon small">＋</span><span>Add Attendance</span></button>
+          </div>
+          <div class="panel">
+            <div class="filter-row">
+              <input id="attendanceSearch" type="search" placeholder="Search remarks/status" />
+              <select id="statusFilter">
+                <option value="all">All</option><option>Present</option><option>Late</option><option>Absent</option><option>Day Off</option><option>Leave</option><option>Holiday</option><option>Half Day</option>
+              </select>
+            </div>
+            <div id="attendanceList" class="record-list"></div>
+          </div>
+        </section>
+
+        <section id="historyView" class="view">
+          <div class="section-head"><div><p class="muted tiny">PAST CUTOFFS</p><h2>History</h2></div></div>
+          <div id="historyList" class="history-list"></div>
+        </section>
+
+        <section id="profileView" class="view">
+          <div class="section-head"><div><p class="muted tiny">SETTINGS</p><h2>Profile</h2></div></div>
+          <div class="panel form-panel">
+            <label>Name</label><input id="profileName" type="text" />
+            <label>Position</label><input id="profilePosition" type="text" />
+            <div class="grid-2">
+              <div><label>Shift Start</label><input id="profileShiftStart" type="time" /></div>
+              <div><label>Shift End</label><input id="profileShiftEnd" type="time" /></div>
+            </div>
+            <button id="saveProfileBtn" class="btn primary full">Save Profile</button>
+          </div>
+
+          <div class="panel">
+            <h3>Data</h3>
+            <p class="muted small">Backup your local attendance records or restore them later.</p>
+            <div class="stack-actions">
+              <button id="exportBtn" class="btn secondary full">Export Backup</button>
+              <label class="btn secondary full file-label">Import Backup<input id="importInput" type="file" accept="application/json" hidden /></label>
+              <button id="resetBtn" class="btn danger full">Reset App Data</button>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <nav class="bottom-nav">
+        <button class="nav-item active" data-view="dashboardView">⌂<span>Dashboard</span></button>
+        <button class="nav-item" data-view="attendanceView">✓<span>Attendance</span></button>
+        <button class="nav-item" data-view="historyView">◷<span>History</span></button>
+        <button class="nav-item" data-view="profileView">●<span>Profile</span></button>
+      </nav>
+    </section>
+  </div>
+
+  <div id="attendanceModal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-head"><div><p class="muted tiny">ATTENDANCE ENTRY</p><h3 id="modalTitle">Add Attendance</h3></div><button id="closeModalBtn" class="icon-btn">×</button></div>
+      <input id="recordId" type="hidden" />
+      <label>Date</label><input id="recordDate" type="date" /><p class="muted tiny" style="margin-top:-4px">You can manually add or edit any previous date. Future dates are blocked.</p>
+      <label>Status</label>
+      <select id="recordStatus">
+        <option value="Present">Present</option><option value="Absent">Absent</option><option value="Day Off">Day Off</option><option value="Leave">Leave</option><option value="Holiday">Holiday</option><option value="Half Day">Half Day</option>
+      </select>
+      <div id="timeFields" class="grid-2">
+        <div><label>Time In (24-hour)</label><input id="recordTimeIn" type="time" /></div>
+        <div><label>Time Out (24-hour)</label><input id="recordTimeOut" type="time" /></div>
+      </div>
+      <div id="latePreview" class="late-preview hidden"></div>
+
+      <div class="ot-box">
+        <label class="check-row"><input id="recordHasOT" type="checkbox" /> <span>With Overtime (OT)</span></label>
+        <div id="otFields" class="hidden">
+          <div class="grid-2">
+            <div><label>OT Start (24-hour)</label><input id="recordOTStart" type="time" /></div>
+            <div><label>OT End (24-hour)</label><input id="recordOTEnd" type="time" /></div>
+          </div>
+          <div id="otPreview" class="ot-preview">OT Total: 0.00 hrs</div>
+        </div>
+      </div>
+
+      <label>Remarks</label><textarea id="recordRemarks" rows="3" placeholder="Optional remarks"></textarea>
+      <div class="modal-actions"><button id="deleteRecordBtn" class="btn danger hidden">Delete</button><button id="saveRecordBtn" class="btn primary">Save Record</button></div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
