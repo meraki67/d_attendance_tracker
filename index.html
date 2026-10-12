@@ -5,11 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#0f172a" id="themeColorMeta" />
   <title>Attendance Tracker</title>
-  <link rel="stylesheet" href="css/style.css?v=12" />
+  <link rel="stylesheet" href="css/style.css?v=26" />
 </head>
 <body>
   <div id="app">
-    <section id="authScreen" class="screen center-screen">
+    <section id="authLoading" class="auth-loading" aria-live="polite">
+      <div class="auth-loading-card">
+        <div class="loading-spinner" aria-hidden="true"></div>
+        <div><strong>Attendance Tracker</strong><span>Restoring your session…</span></div>
+      </div>
+    </section>
+    <section id="authScreen" class="screen center-screen hidden">
       <div class="setup-card auth-card">
         <div class="brand-mark">AT</div>
         <p class="eyebrow">ATTENDANCE TRACKER</p>
@@ -67,6 +73,9 @@
           <button class="nav-item sidebar-nav-item" data-view="historyView" data-label="History" aria-label="History">
             <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 4v4h4"/><path d="M12 7v5l3 2"/></svg></span><span class="nav-label">History</span>
           </button>
+          <button id="adminUsersNav" class="nav-item sidebar-nav-item admin-only hidden" data-view="usersView" data-label="Users" aria-label="Users">
+            <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 19c.6-3.6 2.5-5.4 5.5-5.4s4.9 1.8 5.5 5.4"/><circle cx="17" cy="9" r="2.4"/><path d="M15 14.2c3.2-.3 5.1 1.3 5.5 4.8"/></svg></span><span class="nav-label">Users</span>
+          </button>
           <button class="nav-item sidebar-nav-item" data-view="profileView" data-label="Profile" aria-label="Profile">
             <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.7-4 3-6 7-6s6.3 2 7 6"/></svg></span><span class="nav-label">Profile</span>
           </button>
@@ -87,6 +96,29 @@
 
       <main class="content">
         <section id="dashboardView" class="view active">
+          <section class="today-overview" aria-label="Today's schedule overview">
+            <div class="today-main-card">
+              <div class="today-calendar-icon" aria-hidden="true">
+                <span id="todayMonth">—</span><strong id="todayDateNumber">—</strong>
+              </div>
+              <div class="today-copy">
+                <p class="muted tiny">TODAY</p>
+                <h3 id="todayDayName">—</h3>
+                <span id="todayFullDate" class="today-date-text">—</span>
+              </div>
+              <span id="todayWorkBadge" class="today-status-badge">WORK DAY</span>
+            </div>
+            <div class="schedule-mini-grid">
+              <article class="schedule-mini-card">
+                <span class="schedule-mini-icon" aria-hidden="true">⇄</span>
+                <div><small>SHIFT</small><strong id="dashboardShiftType">Day Shift</strong><span id="dashboardShiftTime">06:00–15:00</span></div>
+              </article>
+              <article class="schedule-mini-card">
+                <span class="schedule-mini-icon" aria-hidden="true">☕</span>
+                <div><small>DAY OFF</small><strong id="dashboardDayOff">Not set</strong><span id="dashboardDayOffHint">Manage in Profile</span></div>
+              </article>
+            </div>
+          </section>
           <div class="cutoff-card">
             <div>
               <p class="muted tiny">CURRENT CUTOFF</p>
@@ -125,13 +157,13 @@
             <div id="recentList" class="record-list empty-state">No attendance records yet.</div>
           </div>
 
-          <button id="addAttendanceBtn" class="fab modern-add"><span class="add-icon">＋</span><span class="add-copy"><strong>Add Attendance</strong><small>Manual entry</small></span></button>
+          <button id="addAttendanceBtn" class="fab icon-fab" aria-label="Add attendance" title="Add Attendance"><span class="add-icon" aria-hidden="true">＋</span></button>
         </section>
 
         <section id="attendanceView" class="view">
           <div class="section-head">
             <div><p class="muted tiny">DAILY RECORDS</p><h2>Attendance</h2></div>
-            <button id="addAttendanceBtn2" class="modern-inline-add"><span class="add-icon small">＋</span><span>Add Attendance</span></button>
+            <button id="addAttendanceBtn2" class="modern-inline-add icon-only" aria-label="Add attendance" title="Add Attendance"><span class="add-icon small" aria-hidden="true">＋</span></button>
           </div>
           <div class="panel">
             <div class="filter-row">
@@ -149,6 +181,15 @@
           <div id="historyList" class="history-list"></div>
         </section>
 
+        <section id="usersView" class="view">
+          <div class="section-head admin-users-head"><div><p class="muted tiny">ADMINISTRATION</p><h2>User Management</h2><p class="muted small">Manage registered users, profiles, schedules, and access roles.</p></div><div class="admin-head-actions"><span id="adminRoleBadge" class="role-badge role-admin">Admin</span><button id="adminAddUserBtn" class="btn primary compact admin-add-user-btn" type="button">＋ Add User</button></div></div>
+          <div class="panel admin-summary-panel">
+            <div class="admin-summary-copy"><span class="admin-summary-icon">◎</span><div><strong id="registeredUserCount">0 registered users</strong><span>Roles shown in the app are Admin and User.</span></div></div>
+            <input id="userSearch" type="search" placeholder="Search name, email, position, or role" />
+          </div>
+          <div id="usersList" class="users-grid"></div>
+        </section>
+
         <section id="profileView" class="view">
           <div class="section-head"><div><p class="muted tiny">SETTINGS</p><h2>Profile</h2></div></div>
           <div class="panel form-panel">
@@ -160,7 +201,7 @@
                 </button>
                 <input id="avatarInput" type="file" accept="image/png,image/jpeg,image/webp" hidden />
               </div>
-              <div class="profile-identity-copy"><strong id="profileAvatarName">User</strong><span class="muted small">Tap the camera to change avatar</span></div>
+              <div class="profile-identity-copy"><strong id="profileAvatarName">User</strong><span id="profileRoleBadge" class="role-badge role-user">User</span><span class="muted small">Tap the camera to change avatar</span></div>
             </div>
             <label>Name</label><input id="profileName" type="text" />
             <label>Position</label><input id="profilePosition" type="text" />
@@ -191,8 +232,8 @@
             </div>
 
             <div class="grid-2">
-              <div><label>Shift Start</label><select id="profileShiftStart" class="time-select" aria-label="Shift Start"></select></div>
-              <div><label>Shift End</label><select id="profileShiftEnd" class="time-select" aria-label="Shift End"></select></div>
+              <div><label>Shift Start</label><input id="profileShiftStart" class="time-input" type="time" step="60" aria-label="Shift Start" /></div>
+              <div><label>Shift End</label><input id="profileShiftEnd" class="time-input" type="time" step="60" aria-label="Shift End" /></div>
             </div>
 
             <label>Weekly Day Off</label>
@@ -225,6 +266,7 @@
         <button class="nav-item active" data-view="dashboardView"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.5V20h13v-9.5"/><path d="M9.5 20v-6h5v6"/></svg></span><span>Dashboard</span></button>
         <button class="nav-item" data-view="attendanceView"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 9h16"/><path d="m8.5 14 2 2 4.5-4.5"/></svg></span><span>Attendance</span></button>
         <button class="nav-item" data-view="historyView"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 4v4h4"/><path d="M12 7v5l3 2"/></svg></span><span>History</span></button>
+        <button id="adminUsersNavMobile" class="nav-item admin-only hidden" data-view="usersView"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 19c.6-3.6 2.5-5.4 5.5-5.4s4.9 1.8 5.5 5.4"/><circle cx="17" cy="9" r="2.4"/><path d="M15 14.2c3.2-.3 5.1 1.3 5.5 4.8"/></svg></span><span>Users</span></button>
         <button class="nav-item" data-view="profileView"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.7-4 3-6 7-6s6.3 2 7 6"/></svg></span><span>Profile</span></button>
       </nav>
     </section>
@@ -240,8 +282,8 @@
         <option value="Present">Present</option><option value="Absent">Absent</option><option value="Day Off">Day Off</option><option value="Leave">Leave</option><option value="Holiday">Holiday</option><option value="Half Day">Half Day</option>
       </select>
       <div id="timeFields" class="grid-2">
-        <div><label>Time In (24-hour)</label><select id="recordTimeIn" class="time-select" aria-label="Time In"></select></div>
-        <div><label>Time Out (24-hour)</label><select id="recordTimeOut" class="time-select" aria-label="Time Out"></select></div>
+        <div><label>Time In (24-hour)</label><input id="recordTimeIn" class="time-input" type="time" step="60" aria-label="Time In" /></div>
+        <div><label>Time Out (24-hour)</label><input id="recordTimeOut" class="time-input" type="time" step="60" aria-label="Time Out" /></div>
       </div>
       <div id="latePreview" class="late-preview hidden"></div>
 
@@ -249,8 +291,8 @@
         <label class="check-row"><input id="recordHasOT" type="checkbox" /> <span>With Overtime (OT)</span></label>
         <div id="otFields" class="hidden">
           <div class="grid-2">
-            <div><label>OT Start (24-hour)</label><select id="recordOTStart" class="time-select" aria-label="OT Start"></select></div>
-            <div><label>OT End (24-hour)</label><select id="recordOTEnd" class="time-select" aria-label="OT End"></select></div>
+            <div><label>OT Start (24-hour)</label><input id="recordOTStart" class="time-input" type="time" step="60" aria-label="OT Start" /></div>
+            <div><label>OT End (24-hour)</label><input id="recordOTEnd" class="time-input" type="time" step="60" aria-label="OT End" /></div>
           </div>
           <div id="otPreview" class="ot-preview">OT Total: 0.00 hrs</div>
         </div>
@@ -261,9 +303,58 @@
     </div>
   </div>
 
+
+  <div id="adminAddUserModal" class="modal hidden">
+    <div class="modal-card admin-user-modal-card">
+      <div class="modal-head"><div><p class="muted tiny">ADMINISTRATION</p><h3>Add User</h3></div><button id="closeAdminAddUserModalBtn" class="icon-btn">×</button></div>
+      <p class="muted small">Create an active account for a new user. Give the temporary password to the user securely.</p>
+      <label>Full Name</label><input id="adminNewName" type="text" autocomplete="off" />
+      <label>Position</label><input id="adminNewPosition" type="text" autocomplete="off" />
+      <label>Email</label><input id="adminNewEmail" type="email" autocomplete="off" />
+      <label>Temporary Password</label>
+      <div class="password-wrap">
+        <input id="adminNewPassword" type="password" autocomplete="new-password" placeholder="Minimum 8 characters" />
+        <button id="adminNewPasswordToggle" class="password-toggle" type="button" aria-label="Show password" title="Show password">Show</button>
+      </div>
+      <p class="muted tiny admin-password-hint">Must include uppercase, lowercase, number, and special character.</p>
+      <label>Role</label><select id="adminNewRole"><option value="user">User</option><option value="admin">Admin</option></select>
+      <label>Shift Type</label><select id="adminNewShiftType"><option value="day">Day Shift</option><option value="night">Night Shift</option></select>
+      <div class="grid-2"><div><label>Shift Start (24-hour)</label><input id="adminNewShiftStart" class="time-input" type="time" step="60" value="06:00" /></div><div><label>Shift End (24-hour)</label><input id="adminNewShiftEnd" class="time-input" type="time" step="60" value="15:00" /></div></div>
+      <label>Weekly Day Off</label>
+      <div id="adminNewDayOffPicker" class="dayoff-picker"><label><input type="checkbox" value="0"><span>Sun</span></label><label><input type="checkbox" value="1"><span>Mon</span></label><label><input type="checkbox" value="2"><span>Tue</span></label><label><input type="checkbox" value="3"><span>Wed</span></label><label><input type="checkbox" value="4"><span>Thu</span></label><label><input type="checkbox" value="5"><span>Fri</span></label><label><input type="checkbox" value="6"><span>Sat</span></label></div>
+      <div class="modal-actions"><button id="adminCancelAddUserBtn" class="btn secondary">Cancel</button><button id="adminCreateUserBtn" class="btn primary">Create User</button></div>
+    </div>
+  </div>
+
+
+  <div id="adminUserModal" class="modal hidden">
+    <div class="modal-card admin-user-modal-card">
+      <div class="modal-head"><div><p class="muted tiny">USER MANAGEMENT</p><h3>Edit User Profile</h3></div><button id="closeAdminUserModalBtn" class="icon-btn">×</button></div>
+      <input id="adminEditUserId" type="hidden" />
+      <div class="admin-user-identity"><div id="adminEditInitials" class="admin-user-avatar">U</div><div><strong id="adminEditIdentityName">User</strong><span id="adminEditCurrentRole" class="muted small">User</span></div></div>
+      <label>Full Name</label><input id="adminEditName" type="text" autocomplete="off" />
+      <label>Position</label><input id="adminEditPosition" type="text" autocomplete="off" />
+      <label>Email</label><input id="adminEditEmail" type="email" autocomplete="off" />
+      <label>Role</label><select id="adminEditRole"><option value="user">User</option><option value="admin">Admin</option></select>
+      <label>Shift Type</label><select id="adminEditShiftType"><option value="day">Day Shift</option><option value="night">Night Shift</option></select>
+      <div class="grid-2"><div><label>Shift Start (24-hour)</label><input id="adminEditShiftStart" class="time-input" type="time" step="60" /></div><div><label>Shift End (24-hour)</label><input id="adminEditShiftEnd" class="time-input" type="time" step="60" /></div></div>
+      <label>Weekly Day Off</label>
+      <div id="adminDayOffPicker" class="dayoff-picker"><label><input type="checkbox" value="0"><span>Sun</span></label><label><input type="checkbox" value="1"><span>Mon</span></label><label><input type="checkbox" value="2"><span>Tue</span></label><label><input type="checkbox" value="3"><span>Wed</span></label><label><input type="checkbox" value="4"><span>Thu</span></label><label><input type="checkbox" value="5"><span>Fri</span></label><label><input type="checkbox" value="6"><span>Sat</span></label></div>
+      <div class="admin-password-reset">
+        <div><strong>Reset Password</strong><span>Optional. Leave blank to keep the current password.</span></div>
+        <div class="password-wrap">
+          <input id="adminResetPassword" type="password" autocomplete="new-password" placeholder="New temporary password" />
+          <button id="adminResetPasswordToggle" class="password-toggle" type="button" aria-label="Show password" title="Show password">Show</button>
+        </div>
+      </div>
+      <div class="admin-warning danger-zone"><strong>Delete Account</strong><span>Permanently removes this Auth account, profile, and attendance data. This cannot be undone.</span></div>
+      <div class="modal-actions admin-modal-actions"><button id="adminDeleteUserBtn" class="btn danger">Delete Account</button><span class="modal-action-spacer"></span><button id="adminCancelUserBtn" class="btn secondary">Cancel</button><button id="adminSaveUserBtn" class="btn primary">Save Changes</button></div>
+    </div>
+  </div>
+
   <div id="toast" class="toast hidden"></div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="js/config.js?v=10"></script>
-  <script src="js/app.js?v=12"></script>
+  <script src="js/app.js?v=26"></script>
 </body>
 </html>

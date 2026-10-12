@@ -376,3 +376,401 @@
 .logout-action:hover{background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.22);color:#dc2626}
 [data-theme="dark"] .icon-action{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.10)}
 @media(max-width:760px){.top-actions{gap:8px}.icon-action{width:38px;height:38px;border-radius:11px}}
+
+
+/* V17 icon-only add attendance buttons */
+.icon-fab{width:64px;height:64px;padding:0;display:grid;place-items:center;border-radius:20px;background:linear-gradient(135deg,#0f172a,#1e293b);box-shadow:0 16px 34px rgba(15,23,42,.28);transition:transform .18s ease,box-shadow .18s ease}
+.icon-fab:hover{transform:translateY(-2px);box-shadow:0 20px 38px rgba(15,23,42,.32)}
+.icon-fab:active{transform:scale(.97)}
+.icon-fab .add-icon{width:42px;height:42px;border-radius:14px;background:rgba(255,255,255,.14);font-size:28px;font-weight:700}
+.modern-inline-add.icon-only{padding:8px;min-width:46px;width:46px;height:46px;justify-content:center;border-radius:14px}
+.modern-inline-add.icon-only .add-icon.small{width:30px;height:30px;border-radius:10px;margin:0;background:rgba(255,255,255,.14)}
+@media(min-width:900px){.icon-fab{right:36px;bottom:32px}}
+@media(max-width:899px){.icon-fab{bottom:94px;right:18px}}
+
+
+/* V18 auth restore state, responsive add action, modern today/schedule dashboard */
+.auth-loading{position:fixed;inset:0;z-index:120;display:grid;place-items:center;background:var(--bg);padding:24px}
+.auth-loading-card{display:flex;align-items:center;gap:14px;padding:17px 20px;border:1px solid var(--border);border-radius:20px;background:var(--card);box-shadow:var(--shadow);color:var(--text)}
+.auth-loading-card>div:last-child{display:flex;flex-direction:column;gap:2px}.auth-loading-card strong{font-size:14px}.auth-loading-card span{font-size:11px;color:var(--muted)}
+.loading-spinner{width:24px;height:24px;border:3px solid rgba(148,163,184,.28);border-top-color:currentColor;border-radius:50%;animation:authSpin .7s linear infinite}@keyframes authSpin{to{transform:rotate(360deg)}}
+.today-overview{display:grid;gap:12px;margin-bottom:16px}.today-main-card{position:relative;display:flex;align-items:center;gap:14px;padding:16px;background:linear-gradient(135deg,var(--card),color-mix(in srgb,var(--card) 88%,#dbeafe 12%));border:1px solid var(--border);border-radius:24px;box-shadow:0 10px 28px rgba(15,23,42,.06);overflow:hidden}.today-main-card::after{content:"";position:absolute;width:120px;height:120px;border-radius:50%;right:-52px;bottom:-72px;background:rgba(59,130,246,.08);pointer-events:none}.today-calendar-icon{width:58px;height:62px;flex:0 0 58px;border-radius:17px;background:var(--primary);color:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 10px 22px rgba(15,23,42,.14)}.today-calendar-icon span{font-size:9px;font-weight:900;letter-spacing:.12em;opacity:.75}.today-calendar-icon strong{font-size:25px;line-height:1;margin-top:2px}.today-copy{min-width:0;flex:1}.today-copy h3{margin:3px 0 2px;font-size:19px}.today-date-text{font-size:12px;color:var(--muted)}.today-status-badge{position:relative;z-index:1;align-self:flex-start;padding:7px 9px;border-radius:999px;background:#dcfce7;color:#166534;font-size:9px;font-weight:900;letter-spacing:.08em}.today-status-badge.is-off{background:#dbeafe;color:#1d4ed8}.schedule-mini-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.schedule-mini-card{display:flex;align-items:center;gap:12px;min-width:0;padding:14px 15px;border-radius:20px;background:var(--card);border:1px solid var(--border);box-shadow:0 8px 22px rgba(15,23,42,.04)}.schedule-mini-icon{width:38px;height:38px;flex:0 0 38px;display:grid;place-items:center;border-radius:12px;background:color-mix(in srgb,var(--primary) 9%,transparent);color:var(--text);font-size:18px}.schedule-mini-card>div{min-width:0;display:flex;flex-direction:column}.schedule-mini-card small{font-size:9px;font-weight:900;letter-spacing:.1em;color:var(--muted)}.schedule-mini-card strong{font-size:13px;margin:2px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.schedule-mini-card span:last-child{font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums}
+.icon-fab{width:clamp(50px,5vw,60px);height:clamp(50px,5vw,60px);border-radius:clamp(15px,1.6vw,19px)}.icon-fab .add-icon{width:clamp(34px,3.6vw,40px);height:clamp(34px,3.6vw,40px);font-size:clamp(22px,2.5vw,27px);border-radius:clamp(11px,1.2vw,14px)}.modern-inline-add.icon-only{width:clamp(42px,4.5vw,46px);height:clamp(42px,4.5vw,46px);min-width:0}.modern-inline-add.icon-only .add-icon.small{width:clamp(27px,3vw,30px);height:clamp(27px,3vw,30px);font-size:clamp(17px,2vw,19px)}
+:root[data-theme="dark"] .today-main-card{background:linear-gradient(135deg,#111827,#121d30)}:root[data-theme="dark"] .today-calendar-icon{background:#f8fafc;color:#0f172a}:root[data-theme="dark"] .schedule-mini-icon{background:#1e293b}
+@media(max-width:560px){.today-main-card{padding:14px;border-radius:21px;gap:12px}.today-calendar-icon{width:52px;height:56px;flex-basis:52px;border-radius:15px}.today-calendar-icon strong{font-size:22px}.today-copy h3{font-size:17px}.today-status-badge{padding:6px 8px;font-size:8px}.schedule-mini-grid{gap:9px}.schedule-mini-card{padding:12px 10px;gap:9px;border-radius:17px}.schedule-mini-icon{width:32px;height:32px;flex-basis:32px;border-radius:10px;font-size:15px}.schedule-mini-card strong{font-size:11px}.schedule-mini-card span:last-child{font-size:9px}.icon-fab{width:52px;height:52px;border-radius:16px;right:14px}.icon-fab .add-icon{width:35px;height:35px;border-radius:11px;font-size:23px}}
+@media(max-width:360px){.today-status-badge{position:absolute;right:12px;top:12px}.today-copy{padding-right:54px}.schedule-mini-grid{grid-template-columns:1fr}.icon-fab{width:48px;height:48px}.icon-fab .add-icon{width:32px;height:32px;font-size:21px}}
+
+/* V19 native manual time/date pickers + role hierarchy */
+.time-input{font-variant-numeric:tabular-nums;letter-spacing:.025em;color-scheme:light}
+:root[data-theme="dark"] .time-input{color-scheme:dark}
+.role-badge{display:inline-flex;width:max-content;align-items:center;padding:5px 9px;border-radius:999px;font-size:10px;font-weight:900;letter-spacing:.04em;text-transform:uppercase}
+.role-user{background:#e2e8f0;color:#475569}.role-admin{background:#dbeafe;color:#1d4ed8}.role-super-admin{background:#fef3c7;color:#92400e}
+.admin-users-head{align-items:flex-start}.admin-summary-panel{display:grid;grid-template-columns:1fr minmax(220px,340px);gap:16px;align-items:center}.admin-summary-copy{display:flex;align-items:center;gap:12px}.admin-summary-copy>div{display:flex;flex-direction:column;gap:3px}.admin-summary-copy span:not(.admin-summary-icon){font-size:12px;color:var(--muted)}.admin-summary-icon{width:42px;height:42px;border-radius:14px;display:grid;place-items:center;background:#e0e7ff;color:#4338ca;font-size:22px;font-weight:900}
+.users-grid{display:grid;gap:11px}.user-admin-card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:14px;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:13px;box-shadow:0 7px 20px rgba(15,23,42,.04)}.user-card-avatar,.admin-user-avatar{width:46px;height:46px;border-radius:15px;background:linear-gradient(145deg,#111827,#334155);color:#fff;display:grid;place-items:center;font-weight:900}.user-card-main{min-width:0;display:flex;flex-direction:column;gap:3px}.user-card-title{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.user-card-main>span,.user-card-main>small{color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.user-card-main>span{font-size:12px}.user-card-main>small{font-size:11px}.admin-edit-user-btn{border:0;border-radius:12px;padding:9px 12px;background:#eef2ff;color:#3730a3;font-weight:800}.admin-edit-user-btn:disabled{opacity:.55;cursor:not-allowed}
+.admin-user-identity{display:flex;align-items:center;gap:12px;background:var(--bg);border-radius:16px;padding:12px;margin:8px 0 4px}.admin-user-identity>div:last-child{display:flex;flex-direction:column;gap:3px;min-width:0}.admin-user-identity strong{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.admin-warning{margin-top:18px;padding:12px 14px;border-radius:14px;background:#fff7ed;color:#9a3412;display:flex;flex-direction:column;gap:3px}.admin-warning span{font-size:11px;line-height:1.45}.admin-modal-actions{align-items:center}.modal-action-spacer{flex:1}
+:root[data-theme="dark"] .role-user{background:#263247;color:#cbd5e1}:root[data-theme="dark"] .role-admin{background:#172554;color:#bfdbfe}:root[data-theme="dark"] .role-super-admin{background:#422006;color:#fde68a}:root[data-theme="dark"] .admin-summary-icon{background:#1e293b;color:#c7d2fe}:root[data-theme="dark"] .admin-edit-user-btn{background:#1e293b;color:#c7d2fe}:root[data-theme="dark"] .admin-warning{background:#431407;color:#fdba74}
+@media(max-width:680px){.admin-summary-panel{grid-template-columns:1fr}.user-admin-card{grid-template-columns:auto 1fr}.admin-edit-user-btn{grid-column:1/-1;width:100%}.admin-modal-actions{display:grid;grid-template-columns:1fr 1fr}.admin-modal-actions .modal-action-spacer{display:none}.admin-modal-actions #adminDeleteUserBtn{grid-column:1/-1}.admin-modal-actions #adminSaveUserBtn,.admin-modal-actions #adminCancelUserBtn{width:100%}}
+@media(max-width:899px){.bottom-nav:has(.admin-only:not(.hidden)){grid-template-columns:repeat(5,1fr)}.bottom-nav:has(.admin-only:not(.hidden)) .nav-item{font-size:16px}.bottom-nav:has(.admin-only:not(.hidden)) .nav-item span:last-child{font-size:9px}}
+
+
+/* V20 Admin/User roles + admin-created users */
+.admin-head-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+.admin-add-user-btn{white-space:nowrap}
+.admin-password-hint{margin-top:7px}
+#adminAddUserModal .password-wrap{position:relative}
+#adminAddUserModal .password-wrap input{padding-right:66px}
+#adminAddUserModal .password-toggle{position:absolute;right:8px;top:50%;transform:translateY(-50%);border:0;background:transparent;color:var(--muted);font-size:12px;font-weight:800;padding:7px 8px;border-radius:9px}
+#adminAddUserModal .password-toggle:hover{background:rgba(148,163,184,.12);color:var(--text)}
+@media(max-width:600px){
+  .admin-users-head{gap:12px}
+  .admin-head-actions{width:100%;justify-content:space-between}
+  .admin-add-user-btn{padding:10px 12px}
+}
+
+
+/* V21 full admin account management */
+.admin-password-reset{margin-top:18px;padding:14px;border:1px solid var(--border);border-radius:16px;background:rgba(148,163,184,.06)}
+.admin-password-reset>div:first-child{display:flex;flex-direction:column;gap:3px;margin-bottom:10px}
+.admin-password-reset>div:first-child strong{font-size:13px}
+.admin-password-reset>div:first-child span{font-size:11px;color:var(--muted)}
+.admin-password-reset .password-wrap{position:relative}
+.admin-password-reset .password-wrap input{padding-right:66px}
+.admin-password-reset .password-toggle{position:absolute;right:8px;top:50%;transform:translateY(-50%);border:0;background:transparent;color:var(--muted);font-size:12px;font-weight:800;padding:7px 8px;border-radius:9px}
+.admin-password-reset .password-toggle:hover{background:rgba(148,163,184,.12);color:var(--text)}
+.danger-zone{margin-top:18px}
+:root[data-theme="dark"] .admin-password-reset{background:rgba(255,255,255,.03)}
+
+/* V22 dark-mode OT panel fix */
+:root[data-theme="dark"] .ot-box{
+  background:#0f172a;
+  border-color:#263247;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.02);
+}
+:root[data-theme="dark"] .ot-box label,
+:root[data-theme="dark"] .ot-box .check-row,
+:root[data-theme="dark"] .ot-box .check-row span{
+  color:#dbe7f5;
+}
+:root[data-theme="dark"] .ot-box .check-row input{
+  accent-color:#22c55e;
+}
+:root[data-theme="dark"] .ot-box input[type="time"],
+:root[data-theme="dark"] .ot-box select{
+  background:#0b1324;
+  color:#f8fafc;
+  border-color:#334155;
+  color-scheme:dark;
+}
+:root[data-theme="dark"] .ot-box input[type="time"]:focus,
+:root[data-theme="dark"] .ot-box select:focus{
+  border-color:#64748b;
+  box-shadow:0 0 0 3px rgba(100,116,139,.18);
+}
+:root[data-theme="dark"] .ot-preview{
+  background:rgba(20,184,166,.12);
+  color:#5eead4;
+  border:1px solid rgba(45,212,191,.18);
+}
+:root[data-theme="dark"] .late-preview{
+  background:rgba(249,115,22,.12);
+  color:#fdba74;
+  border:1px solid rgba(251,146,60,.16);
+}
+
+
+/* V23 comprehensive dark-theme audit
+   Fixes legacy hard-coded light surfaces across the full app. */
+:root[data-theme="dark"]{
+  --surface-soft:#0f172a;
+  --surface-raised:#111c2f;
+  --surface-hover:#162237;
+  --surface-active:#1b2a42;
+  --line-dark:#263247;
+}
+
+/* Core surfaces */
+:root[data-theme="dark"] .history-card,
+:root[data-theme="dark"] .user-admin-card{
+  background:var(--card);
+  color:var(--text);
+  border-color:var(--border);
+  box-shadow:0 8px 24px rgba(0,0,0,.16);
+}
+
+:root[data-theme="dark"] .history-card h1,
+:root[data-theme="dark"] .history-card h2,
+:root[data-theme="dark"] .history-card h3,
+:root[data-theme="dark"] .history-card strong,
+:root[data-theme="dark"] .history-card p,
+:root[data-theme="dark"] .history-card span{
+  color:inherit;
+}
+
+:root[data-theme="dark"] .history-stats span{
+  background:#1e293b;
+  color:#cbd5e1;
+  border:1px solid #2d3a50;
+}
+
+/* Attendance rows and editable records */
+:root[data-theme="dark"] .attendance-record-card{
+  color:var(--text);
+}
+:root[data-theme="dark"] .attendance-record-card:hover{
+  background:var(--surface-hover);
+}
+:root[data-theme="dark"] .attendance-record-card:active{
+  background:var(--surface-active);
+}
+:root[data-theme="dark"] .record-main strong{
+  color:#eaf1fb;
+}
+:root[data-theme="dark"] .record-main span,
+:root[data-theme="dark"] .record-side small,
+:root[data-theme="dark"] .attendance-record-card .record-side em{
+  color:#94a3b8;
+}
+
+/* Dashboard colored statistic cards - dark tinted versions */
+:root[data-theme="dark"] .stat-card.green{
+  background:rgba(34,197,94,.12);
+  color:#86efac;
+  border:1px solid rgba(34,197,94,.15);
+}
+:root[data-theme="dark"] .stat-card.orange{
+  background:rgba(249,115,22,.12);
+  color:#fdba74;
+  border:1px solid rgba(249,115,22,.15);
+}
+:root[data-theme="dark"] .stat-card.red{
+  background:rgba(239,68,68,.12);
+  color:#fca5a5;
+  border:1px solid rgba(239,68,68,.15);
+}
+:root[data-theme="dark"] .stat-card.blue{
+  background:rgba(59,130,246,.12);
+  color:#93c5fd;
+  border:1px solid rgba(59,130,246,.15);
+}
+:root[data-theme="dark"] .stat-card.purple{
+  background:rgba(139,92,246,.12);
+  color:#c4b5fd;
+  border:1px solid rgba(139,92,246,.15);
+}
+:root[data-theme="dark"] .stat-card.slate{
+  background:rgba(100,116,139,.14);
+  color:#cbd5e1;
+  border:1px solid rgba(100,116,139,.18);
+}
+:root[data-theme="dark"] .stat-card.teal{
+  background:rgba(20,184,166,.12);
+  color:#5eead4;
+  border:1px solid rgba(20,184,166,.15);
+}
+
+/* Status badges */
+:root[data-theme="dark"] .badge-present{
+  background:rgba(34,197,94,.14);
+  color:#86efac;
+}
+:root[data-theme="dark"] .badge-late{
+  background:rgba(249,115,22,.14);
+  color:#fdba74;
+}
+:root[data-theme="dark"] .badge-absent{
+  background:rgba(239,68,68,.14);
+  color:#fca5a5;
+}
+:root[data-theme="dark"] .badge-day-off{
+  background:rgba(59,130,246,.14);
+  color:#93c5fd;
+}
+:root[data-theme="dark"] .badge-leave{
+  background:rgba(139,92,246,.14);
+  color:#c4b5fd;
+}
+:root[data-theme="dark"] .badge-holiday,
+:root[data-theme="dark"] .badge-half-day{
+  background:#263247;
+  color:#cbd5e1;
+}
+
+/* Today / work-day badges */
+:root[data-theme="dark"] .today-status-badge{
+  background:rgba(34,197,94,.14);
+  color:#86efac;
+  border:1px solid rgba(34,197,94,.14);
+}
+:root[data-theme="dark"] .today-status-badge.is-off{
+  background:rgba(59,130,246,.14);
+  color:#93c5fd;
+  border-color:rgba(59,130,246,.14);
+}
+
+/* Authentication and password UI */
+:root[data-theme="dark"] .password-toggle{
+  background:#1e293b;
+  color:#cbd5e1;
+}
+:root[data-theme="dark"] .password-toggle:hover{
+  background:#263247;
+  color:#f8fafc;
+}
+:root[data-theme="dark"] .password-rules{
+  background:#0f172a;
+  border-color:#263247;
+  color:#cbd5e1;
+}
+:root[data-theme="dark"] .auth-message{
+  background:rgba(249,115,22,.12);
+  color:#fdba74;
+  border:1px solid rgba(249,115,22,.16);
+}
+
+/* Sync indicators */
+:root[data-theme="dark"] .sync-badge{
+  background:rgba(34,197,94,.14);
+  color:#86efac;
+}
+:root[data-theme="dark"] .sync-badge.syncing{
+  background:rgba(245,158,11,.14);
+  color:#fcd34d;
+}
+:root[data-theme="dark"] .sync-badge.error{
+  background:rgba(239,68,68,.14);
+  color:#fca5a5;
+}
+
+/* Schedule controls */
+:root[data-theme="dark"] .dayoff-picker span:hover{
+  background:#1e293b;
+}
+:root[data-theme="dark"] .schedule-panel,
+:root[data-theme="dark"] .schedule-mini-card{
+  color:var(--text);
+}
+
+/* Admin management */
+:root[data-theme="dark"] .admin-user-identity{
+  background:#0b1324;
+  border:1px solid #263247;
+}
+:root[data-theme="dark"] .admin-edit-user-btn:hover{
+  background:#263247;
+}
+:root[data-theme="dark"] .admin-warning:not(.danger-zone){
+  background:rgba(249,115,22,.12);
+  color:#fdba74;
+  border:1px solid rgba(249,115,22,.15);
+}
+:root[data-theme="dark"] .admin-warning.danger-zone{
+  background:rgba(239,68,68,.10);
+  color:#fca5a5;
+  border:1px solid rgba(239,68,68,.16);
+}
+
+/* General buttons/links */
+:root[data-theme="dark"] .link-btn{
+  color:#93c5fd;
+}
+:root[data-theme="dark"] .modern-inline-add,
+:root[data-theme="dark"] .icon-fab{
+  background:linear-gradient(135deg,#334155,#1e293b);
+  color:#fff;
+  border:1px solid rgba(255,255,255,.07);
+}
+:root[data-theme="dark"] .btn.danger{
+  background:rgba(239,68,68,.14);
+  color:#fca5a5;
+  border:1px solid rgba(239,68,68,.16);
+}
+
+/* Form/autofill/native pickers */
+:root[data-theme="dark"] input,
+:root[data-theme="dark"] select,
+:root[data-theme="dark"] textarea{
+  caret-color:#f8fafc;
+}
+:root[data-theme="dark"] input::placeholder,
+:root[data-theme="dark"] textarea::placeholder{
+  color:#64748b;
+  opacity:1;
+}
+:root[data-theme="dark"] input:-webkit-autofill,
+:root[data-theme="dark"] input:-webkit-autofill:hover,
+:root[data-theme="dark"] input:-webkit-autofill:focus{
+  -webkit-text-fill-color:#e5edf8;
+  -webkit-box-shadow:0 0 0 1000px #0f172a inset;
+  transition:background-color 9999s ease-out 0s;
+}
+:root[data-theme="dark"] input[type="date"],
+:root[data-theme="dark"] input[type="time"]{
+  color-scheme:dark;
+}
+
+/* Modal separators/surfaces */
+:root[data-theme="dark"] .modal-card{
+  border:1px solid #263247;
+}
+:root[data-theme="dark"] .modal-head{
+  color:var(--text);
+}
+
+/* Empty states and secondary copy */
+:root[data-theme="dark"] .empty-state{
+  color:#94a3b8;
+}
+
+/* Mobile navigation shadow and active state */
+@media(max-width:899px){
+  :root[data-theme="dark"] .bottom-nav{
+    box-shadow:0 16px 36px rgba(0,0,0,.38);
+  }
+}
+
+/* Keep desktop sidebar intentionally dark in both themes, but make toggle coherent */
+@media(min-width:861px){
+  :root[data-theme="dark"] .sidebar-toggle{
+    background:rgba(255,255,255,.045)!important;
+    color:#cbd5e1!important;
+    border-color:rgba(255,255,255,.08)!important;
+  }
+}
+
+/* Prevent accidental white legacy surfaces inside dark cards */
+:root[data-theme="dark"] .panel > *{
+  border-color:inherit;
+}
+
+
+/* V26: visible roles remain Admin/User.
+   Admin uses the former Super Admin premium badge frame. */
+.role-admin,
+.role-super-admin{
+  background:#fef3c7;
+  color:#92400e;
+  border:1px solid rgba(146,64,14,.14);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.35);
+}
+:root[data-theme="dark"] .role-admin,
+:root[data-theme="dark"] .role-super-admin{
+  background:#422006;
+  color:#fde68a;
+  border-color:rgba(253,230,138,.14);
+  box-shadow:inset 0 0 0 1px rgba(253,230,138,.04);
+}
+
+/* History safeguard: never allow legacy white history cards in dark mode. */
+:root[data-theme="dark"] .history-card{
+  background:#111827 !important;
+  color:#e5edf8 !important;
+  border-color:#263247 !important;
+}
+:root[data-theme="dark"] .history-card strong{
+  color:#e5edf8 !important;
+}
+:root[data-theme="dark"] .history-stats span{
+  background:#1e293b !important;
+  color:#cbd5e1 !important;
+  border:1px solid #2d3a50 !important;
+}

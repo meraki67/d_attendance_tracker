@@ -9,11 +9,11 @@ const sb=configReady?window.supabase.createClient(cfg.url,cfg.key,{
     storage:window.localStorage
   }
 }):null;
-let user=null, profile=null, records=[], cutoffOffset=0, authMode='login';
-const TIME_STEP=5;
-function militaryTimes(step=TIME_STEP){const out=[];for(let m=0;m<1440;m+=step)out.push(`${pad(Math.floor(m/60))}:${pad(m%60)}`);return out}
-function setTimeSelectValue(el,value='',allowBlank=true){if(!el)return;const v=fmtTime(value||'');const base=militaryTimes();let values=allowBlank?['',...base]:base.slice();if(v&&!values.includes(v))values.splice(allowBlank?1:0,0,v);el.innerHTML=values.map(x=>`<option value="${x}">${x||'— Select time —'}</option>`).join('');el.value=v||''}
-function initTimeSelects(){['profileShiftStart','profileShiftEnd','recordTimeIn','recordTimeOut','recordOTStart','recordOTEnd'].forEach(id=>setTimeSelectValue($(id),'',true))}
+let user=null, profile=null, records=[], cutoffOffset=0, authMode='login', adminUsers=[];
+const IDLE_TIMEOUT_MS=2*60*1000;
+let idleInterval=null,lastActivityWrite=0;
+function rawTime(t){return t?String(t).slice(0,5):''}
+function initTimeSelects(){}
 function applyTheme(theme='light',saveLocal=true){const t=theme==='dark'?'dark':'light';document.documentElement.dataset.theme=t;document.body.dataset.theme=t;const meta=$('themeColorMeta');if(meta)meta.content=t==='dark'?'#0b1220':'#f5f7fb';if(saveLocal)localStorage.setItem('attendanceTheme',t);document.querySelectorAll('.theme-option').forEach(b=>b.classList.toggle('active',b.dataset.theme===t));if($('themeSummary'))$('themeSummary').textContent=t==='dark'?'Dark':'Light'}
 function renderAvatar(){if(!profile)return;const name=profile.name||'User',data=profile.avatarData||'';if($('profileAvatarName'))$('profileAvatarName').textContent=name;if($('profileAvatarInitials'))$('profileAvatarInitials').textContent=initials(name);if($('headerAvatarInitials'))$('headerAvatarInitials').textContent=initials(name);const pairs=[[$('profileAvatarImg'),$('profileAvatarInitials')],[$('headerAvatarImg'),$('headerAvatarInitials')]];pairs.forEach(([img,ini])=>{if(!img||!ini)return;if(data){img.src=data;img.classList.remove('hidden');ini.classList.add('hidden')}else{img.removeAttribute('src');img.classList.add('hidden');ini.classList.remove('hidden')}})}
 async function compressAvatar(file){if(!file)return'';if(!/^image\/(png|jpeg|webp)$/.test(file.type))throw new Error('Please choose a JPG, PNG, or WebP image.');if(file.size>8*1024*1024)throw new Error('Image is too large. Maximum is 8 MB.');const data=await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(file)});const img=await new Promise((resolve,reject)=>{const i=new Image();i.onload=()=>resolve(i);i.onerror=reject;i.src=data});const size=256,canvas=document.createElement('canvas');canvas.width=size;canvas.height=size;const ctx=canvas.getContext('2d');const side=Math.min(img.width,img.height),sx=(img.width-side)/2,sy=(img.height-side)/2;ctx.drawImage(img,sx,sy,side,side,0,0,size,size);return canvas.toDataURL('image/jpeg',.82)}
@@ -51,28 +51,144 @@ function lateM(t){return Math.max(0,minutes(t)-minutes(profile?.shiftStart||'06:
 function otM(a,b){if(!a||!b)return 0;let x=minutes(a),y=minutes(b);if(y<x)y+=1440;return Math.max(0,y-x)}
 function eff(r){return r.status==='Present'&&lateM(r.timeIn)>0?'Late':r.status} function fmtOT(m){return (m/60).toFixed(m%60?2:0)}
 function badge(s){return `badge-${s.toLowerCase().replace(/\s+/g,'-')}`}
-function normalizeProfile(p){return {name:p?.name||user?.user_metadata?.name||'User',position:p?.position||user?.user_metadata?.position||'',shiftType:p?.shift_type||p?.shiftType||'day',shiftStart:fmtTime(p?.shift_start||p?.shiftStart||'06:00'),shiftEnd:fmtTime(p?.shift_end||p?.shiftEnd||'15:00'),dayOffs:p?.day_offs||p?.dayOffs||[],avatarData:p?.avatar_data||p?.avatarData||'',theme:p?.theme||'light'}}
+function normalizeProfile(p){return {name:p?.name||user?.user_metadata?.name||'User',position:p?.position||user?.user_metadata?.position||'',email:p?.email||user?.email||'',role:p?.role||'user',shiftType:p?.shift_type||p?.shiftType||'day',shiftStart:rawTime(p?.shift_start||p?.shiftStart||'06:00'),shiftEnd:rawTime(p?.shift_end||p?.shiftEnd||'15:00'),dayOffs:p?.day_offs||p?.dayOffs||[],avatarData:p?.avatar_data||p?.avatarData||'',theme:p?.theme||'light'}}
 function dbRecord(r){return {id:r.id,user_id:user.id,date:r.date,status:r.status,time_in:r.timeIn||null,time_out:r.timeOut||null,has_ot:!!r.hasOT,ot_start:r.otStart||null,ot_end:r.otEnd||null,remarks:r.remarks||'',entry_type:r.entryType||'manual',manually_edited:!!r.manuallyEdited,created_at:r.createdAt||new Date().toISOString(),updated_at:new Date().toISOString()}}
-function appRecord(r){return {id:r.id,date:r.date,status:r.status,timeIn:fmtTime(r.time_in),timeOut:fmtTime(r.time_out),hasOT:r.has_ot,otStart:fmtTime(r.ot_start),otEnd:fmtTime(r.ot_end),remarks:r.remarks||'',entryType:r.entry_type,manuallyEdited:r.manually_edited,createdAt:r.created_at,updatedAt:r.updated_at}}
+function appRecord(r){return {id:r.id,date:r.date,status:r.status,timeIn:rawTime(r.time_in),timeOut:rawTime(r.time_out),hasOT:r.has_ot,otStart:rawTime(r.ot_start),otEnd:rawTime(r.ot_end),remarks:r.remarks||'',entryType:r.entry_type,manuallyEdited:r.manually_edited,createdAt:r.created_at,updatedAt:r.updated_at}}
 
-function showAuth(){$('authScreen').classList.remove('hidden');$('mainApp').classList.add('hidden')}
-function showMain(){$('authScreen').classList.add('hidden');$('mainApp').classList.remove('hidden');renderAll()}
+function roleLabel(role='user'){return ['admin','super_admin'].includes(role)?'Admin':'User'}
+function isAdmin(){return ['admin','super_admin'].includes(profile?.role)}
+function isSuperAdmin(){return profile?.role==='super_admin'}
+function renderRoleAccess(){const allowed=isAdmin();document.querySelectorAll('.admin-only').forEach(el=>el.classList.toggle('hidden',!allowed));if(!allowed&&document.getElementById('usersView')?.classList.contains('active'))switchView('dashboardView');const badge=$('adminRoleBadge');if(badge){badge.textContent=roleLabel(profile?.role);badge.className=`role-badge ${['admin','super_admin'].includes(profile?.role)?'role-admin':'role-user'}`}}
+function adminUserCard(p){const r=p.role||'user',protectedRole=r==='super_admin';return `<article class="user-admin-card" data-user-id="${p.user_id}"><div class="user-card-avatar">${esc(initials(p.name||'U'))}</div><div class="user-card-main"><div class="user-card-title"><strong>${esc(p.name||'Unnamed user')}</strong><span class="role-badge ${['admin','super_admin'].includes(r)?'role-admin':'role-user'}">${roleLabel(r)}</span></div><span>${esc(p.email||'No email')}</span><small>${esc(p.position||'No position')} • ${p.shift_type==='night'?'Night':'Day'} ${rawTime(p.shift_start)}–${rawTime(p.shift_end)}</small></div><button class="admin-edit-user-btn" data-admin-edit="${p.user_id}" ${protectedRole&&!isSuperAdmin()?'disabled':''}>${protectedRole&&!isSuperAdmin()?'Protected':'Manage'}</button></article>`}
+async function loadAdminUsers(){if(!isAdmin())return;const list=$('usersList');if(list)list.innerHTML='<div class="empty-state">Loading users…</div>';const {data,error}=await sb.from('profiles').select('user_id,name,position,email,role,shift_type,shift_start,shift_end,day_offs,created_at').order('name',{ascending:true});if(error){if(list)list.innerHTML=`<div class="empty-state">${esc(error.message)}</div>`;return}adminUsers=data||[];renderAdminUsers()}
+function renderAdminUsers(){if(!isAdmin())return;const q=($('userSearch')?.value||'').trim().toLowerCase();const rows=adminUsers.filter(p=>[p.name,p.email,p.position,p.role].some(v=>String(v||'').toLowerCase().includes(q)));$('registeredUserCount').textContent=`${adminUsers.length} registered user${adminUsers.length===1?'':'s'}`;$('usersList').innerHTML=rows.length?rows.map(adminUserCard).join(''):'<div class="panel empty-state">No users found.</div>';document.querySelectorAll('[data-admin-edit]').forEach(b=>b.onclick=()=>openAdminUserModal(b.dataset.adminEdit))}
+function openAdminUserModal(id){
+  const p=adminUsers.find(x=>x.user_id===id);if(!p)return;
+  const targetSuper=p.role==='super_admin';
+  $('adminEditUserId').value=p.user_id;
+  $('adminEditIdentityName').textContent=p.name||'User';
+  $('adminEditInitials').textContent=initials(p.name||'U');
+  $('adminEditCurrentRole').textContent=roleLabel(p.role);
+  $('adminEditName').value=p.name||'';
+  $('adminEditPosition').value=p.position||'';
+  $('adminEditEmail').value=p.email||'';
+  $('adminEditRole').value=p.role==='admin'?'admin':'user';
+  $('adminEditRole').disabled=targetSuper;
+  $('adminEditShiftType').value=p.shift_type||'day';
+  $('adminEditShiftStart').value=rawTime(p.shift_start||'06:00');
+  $('adminEditShiftEnd').value=rawTime(p.shift_end||'15:00');
+  $('adminResetPassword').value='';
+  document.querySelectorAll('#adminDayOffPicker input').forEach(cb=>cb.checked=(p.day_offs||[]).includes(Number(cb.value)));
+  $('adminDeleteUserBtn').classList.toggle('hidden',targetSuper||p.user_id===user.id);
+  $('adminSaveUserBtn').disabled=targetSuper&&!isSuperAdmin();
+  $('adminUserModal').classList.remove('hidden')
+}
+function closeAdminUserModal(){$('adminUserModal').classList.add('hidden')}
+async function invokeAdminManage(body){
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session)throw new Error('Your session expired. Please login again.');
+  const {data,error}=await sb.functions.invoke('admin-manage-user',{
+    body,
+    headers:{Authorization:`Bearer ${session.access_token}`}
+  });
+  if(error)throw error;
+  if(data?.error)throw new Error(data.error);
+  return data;
+}
+function toggleAdminResetPassword(){
+  const input=$('adminResetPassword'),show=input.type==='password';
+  input.type=show?'text':'password';
+  $('adminResetPasswordToggle').textContent=show?'Hide':'Show';
+  $('adminResetPasswordToggle').setAttribute('aria-label',show?'Hide password':'Show password')
+}
+async function saveAdminUser(){
+  const id=$('adminEditUserId').value,p=adminUsers.find(x=>x.user_id===id);if(!id||!p)return;
+  const days=[...document.querySelectorAll('#adminDayOffPicker input:checked')].map(x=>Number(x.value));
+  const name=$('adminEditName').value.trim(),position=$('adminEditPosition').value.trim(),email=$('adminEditEmail').value.trim().toLowerCase();
+  const role=$('adminEditRole').value,shiftType=$('adminEditShiftType').value,shiftStart=$('adminEditShiftStart').value,shiftEnd=$('adminEditShiftEnd').value;
+  const newPassword=$('adminResetPassword').value;
+  if(!name||!position||!email||!shiftStart||!shiftEnd)return toast('Complete the required user fields');
+  if(newPassword&&!passwordIsStrong(newPassword))return toast('New password must meet the password rules');
+  const btn=$('adminSaveUserBtn');btn.disabled=true;
+  try{
+    await invokeAdminManage({action:'update',userId:id,name,position,email,role,shiftType,shiftStart,shiftEnd,dayOffs:days,newPassword});
+    closeAdminUserModal();await loadAdminUsers();toast(newPassword?'User updated and password reset':'User account updated')
+  }catch(e){toast(e.message||'Unable to update user')}
+  finally{btn.disabled=false}
+}
+async function deleteAdminUserProfile(){
+  const id=$('adminEditUserId').value,p=adminUsers.find(x=>x.user_id===id);if(!p)return;
+  if(!confirm(`Permanently delete ${p.name}'s account, attendance data, and login? This cannot be undone.`))return;
+  const btn=$('adminDeleteUserBtn');btn.disabled=true;
+  try{
+    await invokeAdminManage({action:'delete',userId:id});
+    closeAdminUserModal();await loadAdminUsers();toast('User account permanently deleted')
+  }catch(e){toast(e.message||'Unable to delete user')}
+  finally{btn.disabled=false}
+}
+function hideAuthLoading(){const el=$('authLoading');if(el)el.classList.add('hidden')}
+
+function idleKey(){return user?`attendanceLastActivity:${user.id}`:'attendanceLastActivity'}
+function noteActivity(force=false){if(!user)return;const now=Date.now();if(force||now-lastActivityWrite>5000){localStorage.setItem(idleKey(),String(now));lastActivityWrite=now}}
+function checkIdle(){if(!user)return;const last=Number(localStorage.getItem(idleKey())||Date.now());if(Date.now()-last>=IDLE_TIMEOUT_MS){logoutUser(true)}}
+function startIdleSession(){if(!user)return;const existing=Number(localStorage.getItem(idleKey())||0);if(existing&&Date.now()-existing>=IDLE_TIMEOUT_MS){logoutUser(true);return}noteActivity(true);clearInterval(idleInterval);idleInterval=setInterval(checkIdle,10000)}
+function stopIdleSession(){clearInterval(idleInterval);idleInterval=null}
+['pointerdown','mousemove','keydown','touchstart','scroll'].forEach(evt=>window.addEventListener(evt,()=>noteActivity(),{passive:true}));
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')checkIdle()});
+
+function openAdminAddUserModal(){
+  if(!isAdmin())return;
+  $('adminNewName').value='';$('adminNewPosition').value='';$('adminNewEmail').value='';$('adminNewPassword').value='';
+  $('adminNewRole').value='user';$('adminNewShiftType').value='day';$('adminNewShiftStart').value='06:00';$('adminNewShiftEnd').value='15:00';
+  document.querySelectorAll('#adminNewDayOffPicker input').forEach(cb=>cb.checked=false);
+  $('adminAddUserModal').classList.remove('hidden');
+}
+function closeAdminAddUserModal(){$('adminAddUserModal').classList.add('hidden')}
+async function createAdminUser(){
+  if(!isAdmin())return;
+  const name=$('adminNewName').value.trim(),position=$('adminNewPosition').value.trim(),email=$('adminNewEmail').value.trim().toLowerCase(),password=$('adminNewPassword').value;
+  const role=$('adminNewRole').value,shiftType=$('adminNewShiftType').value,shiftStart=$('adminNewShiftStart').value,shiftEnd=$('adminNewShiftEnd').value;
+  const dayOffs=[...document.querySelectorAll('#adminNewDayOffPicker input:checked')].map(x=>Number(x.value));
+  if(!name||!position||!email||!password||!shiftStart||!shiftEnd)return toast('Complete all required user fields');
+  if(!passwordIsStrong(password))return toast('Temporary password must meet the password rules');
+  const btn=$('adminCreateUserBtn');btn.disabled=true;
+  try{
+    await invokeAdminManage({action:'create',name,position,email,password,role,shiftType,shiftStart,shiftEnd,dayOffs});
+    closeAdminAddUserModal();await loadAdminUsers();toast('User account created')
+  }catch(e){toast(e.message||'Unable to create user')}
+  finally{btn.disabled=false}
+}
+function toggleAdminNewPassword(){
+  const input=$('adminNewPassword'),show=input.type==='password';input.type=show?'text':'password';
+  $('adminNewPasswordToggle').textContent=show?'Hide':'Show';$('adminNewPasswordToggle').setAttribute('aria-label',show?'Hide password':'Show password')
+}
+
+function showAuth(){stopIdleSession();hideAuthLoading();$('authScreen').classList.remove('hidden');$('mainApp').classList.add('hidden')}
+function showMain(){hideAuthLoading();$('authScreen').classList.add('hidden');$('mainApp').classList.remove('hidden');renderAll();startIdleSession()}
 function greeting(){const h=new Date().getHours();return h<12?'GOOD MORNING':h<18?'GOOD AFTERNOON':'GOOD EVENING'}
 function initials(n='U'){return n.split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join('').toUpperCase()}
 function renderHeader(){$('greeting').textContent=greeting();$('headerName').textContent=profile.name;$('headerPosition').textContent=profile.position;renderAvatar()}
 function getCutoffForDate(date){const y=date.getFullYear(),m=date.getMonth(),d=date.getDate();let start,end;if(d>=6&&d<=20){start=new Date(y,m,6);end=new Date(y,m,20)}else if(d>=21){start=new Date(y,m,21);end=new Date(y,m+1,5)}else{start=new Date(y,m-1,21);end=new Date(y,m,5)}return{start,end}}
 function shiftCutoff(base,off){let c=getCutoffForDate(base);for(let i=0;i<Math.abs(off);i++){const n=off>0?new Date(c.end.getFullYear(),c.end.getMonth(),c.end.getDate()+1):new Date(c.start.getFullYear(),c.start.getMonth(),c.start.getDate()-1);c=getCutoffForDate(n)}return c}
-function cutoffLabel(c){const s=c.start.toLocaleDateString('en-US',{month:'short',day:'numeric'}),e=c.end.toLocaleDateString('en-US',{month:c.start.getMonth()===c.end.getMonth()?undefined:'short',day:'numeric',year:'numeric'});return `${s} – ${e}`}
+function cutoffLabel(c){
+  const sameYear=c.start.getFullYear()===c.end.getFullYear();
+  const sameMonth=sameYear&&c.start.getMonth()===c.end.getMonth();
+  const s=c.start.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  const e=c.end.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  const year=c.end.getFullYear();
+  return sameMonth?`${s} – ${e}, ${year}`:`${s}, ${c.start.getFullYear()} – ${e}, ${year}`;
+}
 function summarize(rs){const s={Present:0,Late:0,Absent:0,'Day Off':0,Leave:0,Holiday:0,'Half Day':0,lateMinutes:0,otMinutes:0};rs.forEach(r=>{const st=eff(r);s[st]=(s[st]||0)+1;if(st==='Late')s.lateMinutes+=lateM(r.timeIn);s.otMinutes+=r.hasOT?otM(r.otStart,r.otEnd):0});const work=s.Present+s.Late+s.Absent+s['Half Day'],att=s.Present+s.Late+s['Half Day'];s.rate=work?Math.round(att/work*100):0;return s}
 function recordRow(r,full=false){const st=eff(r),ot=r.hasOT?` • OT ${fmtOT(otM(r.otStart,r.otEnd))}h`:'';return `<button class="${full?'attendance-record-card':'record-item'}" data-edit="${r.id}" style="width:100%;background:none;border:0;text-align:left"><div class="record-main"><strong>${fmtDate(r.date,{weekday:'short',month:'short',day:'numeric'})}</strong><span>${esc(r.remarks||'No remarks')}${ot}</span></div><div class="record-side"><span class="badge ${badge(st)}">${st}</span><small>${r.timeIn?fmtTime(r.timeIn):'—'}${full&&r.timeOut?`–${fmtTime(r.timeOut)}`:''}</small>${full?'<em>Tap to edit</em>':''}</div></button>`}
-function renderDashboard(){const c=shiftCutoff(new Date(),cutoffOffset),rs=records.filter(r=>{const d=parseLocalDate(r.date);return d>=c.start&&d<=c.end}).sort((a,b)=>b.date.localeCompare(a.date)),s=summarize(rs);$('cutoffLabel').textContent=cutoffLabel(c);$('presentCount').textContent=s.Present;$('lateCount').textContent=s.Late;$('absentCount').textContent=s.Absent;$('dayOffCount').textContent=s['Day Off'];$('leaveCount').textContent=s.Leave;$('holidayCount').textContent=s.Holiday;$('otHoursCount').textContent=fmtOT(s.otMinutes);$('attendanceRate').textContent=`${s.rate}%`;$('attendanceProgress').style.width=`${s.rate}%`;$('lateMinutesTotal').textContent=s.lateMinutes;$('recentList').innerHTML=rs.length?rs.slice(0,5).map(r=>recordRow(r)).join(''):'No attendance records yet.'}
+function renderTodayOverview(){if(!profile)return;const now=new Date(),days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'],shortDays=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];const day=now.getDay(),isOff=(profile.dayOffs||[]).includes(day);$('todayMonth').textContent=now.toLocaleDateString('en-US',{month:'short'}).toUpperCase();$('todayDateNumber').textContent=now.getDate();$('todayDayName').textContent=days[day];$('todayFullDate').textContent=now.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});$('todayWorkBadge').textContent=isOff?'DAY OFF':'WORK DAY';$('todayWorkBadge').classList.toggle('is-off',isOff);$('dashboardShiftType').textContent=profile.shiftType==='night'?'Night Shift':'Day Shift';$('dashboardShiftTime').textContent=`${profile.shiftStart}–${profile.shiftEnd}`;const offs=(profile.dayOffs||[]).map(d=>shortDays[d]);$('dashboardDayOff').textContent=offs.length?offs.join(', '):'Not set';$('dashboardDayOffHint').textContent=offs.length?(isOff?'Today is your day off':'Weekly schedule'):'Manage in Profile'}
+function renderDashboard(){renderTodayOverview();const c=shiftCutoff(new Date(),cutoffOffset),rs=records.filter(r=>{const d=parseLocalDate(r.date);return d>=c.start&&d<=c.end}).sort((a,b)=>b.date.localeCompare(a.date)),s=summarize(rs);$('cutoffLabel').textContent=cutoffLabel(c);$('presentCount').textContent=s.Present;$('lateCount').textContent=s.Late;$('absentCount').textContent=s.Absent;$('dayOffCount').textContent=s['Day Off'];$('leaveCount').textContent=s.Leave;$('holidayCount').textContent=s.Holiday;$('otHoursCount').textContent=fmtOT(s.otMinutes);$('attendanceRate').textContent=`${s.rate}%`;$('attendanceProgress').style.width=`${s.rate}%`;$('lateMinutesTotal').textContent=s.lateMinutes;$('recentList').innerHTML=rs.length?rs.slice(0,5).map(r=>recordRow(r)).join(''):'No attendance records yet.'}
 function renderAttendance(){const q=$('attendanceSearch').value.trim().toLowerCase(),f=$('statusFilter').value;const rs=records.slice().sort((a,b)=>b.date.localeCompare(a.date)).filter(r=>(f==='all'||eff(r)===f)&&(!q||`${eff(r)} ${r.remarks||''} ${r.date}`.toLowerCase().includes(q)));$('attendanceList').innerHTML=rs.length?rs.map(r=>recordRow(r,true)).join(''):'<div class="empty-state">No matching records.</div>';bindRows()}
 function renderHistory(){const groups=new Map();records.forEach(r=>{const c=getCutoffForDate(parseLocalDate(r.date)),k=`${localDateStr(c.start)}_${localDateStr(c.end)}`;if(!groups.has(k))groups.set(k,{c,rs:[]});groups.get(k).rs.push(r)});const arr=[...groups.values()].sort((a,b)=>b.c.start-a.c.start);$('historyList').innerHTML=arr.length?arr.map(g=>{const s=summarize(g.rs);return `<div class="history-card"><strong>${cutoffLabel(g.c)}</strong><div class="history-stats"><span>Present ${s.Present}</span><span>Late ${s.Late}</span><span>Absent ${s.Absent}</span><span>Day Off ${s['Day Off']}</span><span>Leave ${s.Leave}</span><span>OT ${fmtOT(s.otMinutes)} hrs</span><span>Rate ${s.rate}%</span></div></div>`}).join(''):'<div class="empty-state">No history yet.</div>'}
-function renderProfile(){$('profileName').value=profile.name;$('profilePosition').value=profile.position;setTimeSelectValue($('profileShiftStart'),profile.shiftStart,false);setTimeSelectValue($('profileShiftEnd'),profile.shiftEnd,false);document.querySelectorAll('.shift-option').forEach(b=>b.classList.toggle('active',b.dataset.shift===profile.shiftType));document.querySelectorAll('#dayOffPicker input').forEach(cb=>cb.checked=profile.dayOffs.includes(Number(cb.value)));$('scheduleSummary').textContent=`${profile.shiftType==='night'?'Night':'Day'} Shift • ${profile.shiftStart}–${profile.shiftEnd}`;applyTheme(profile.theme||'light');renderAvatar()}
-function renderAll(){renderHeader();renderDashboard();renderAttendance();renderHistory();renderProfile();bindRows()}
+function renderProfile(){$('profileName').value=profile.name;$('profilePosition').value=profile.position;$('profileShiftStart').value=rawTime(profile.shiftStart);$('profileShiftEnd').value=rawTime(profile.shiftEnd);document.querySelectorAll('.shift-option').forEach(b=>b.classList.toggle('active',b.dataset.shift===profile.shiftType));document.querySelectorAll('#dayOffPicker input').forEach(cb=>cb.checked=profile.dayOffs.includes(Number(cb.value)));$('scheduleSummary').textContent=`${profile.shiftType==='night'?'Night':'Day'} Shift • ${profile.shiftStart}–${profile.shiftEnd}`;const rb=$('profileRoleBadge');if(rb){rb.textContent=roleLabel(profile.role);rb.className=`role-badge ${['admin','super_admin'].includes(profile.role)?'role-admin':'role-user'}`}applyTheme(profile.theme||'light');renderAvatar()}
+function renderAll(){renderHeader();renderDashboard();renderAttendance();renderHistory();renderProfile();renderRoleAccess();bindRows()}
 function bindRows(){document.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>openModal(b.dataset.edit))}
-function switchView(id){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===id));document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.view===id));if(id==='attendanceView')renderAttendance();if(id==='historyView')renderHistory();if(id==='profileView')renderProfile()}
-function openModal(id=null){const r=id?records.find(x=>x.id===id):null;$('recordId').value=r?.id||'';$('modalTitle').textContent=r?'Edit Attendance':'Manual Add Attendance';$('recordDate').max=localDateStr();$('recordDate').value=r?.date||localDateStr();$('recordStatus').value=r?.status==='Late'?'Present':(r?.status||'Present');setTimeSelectValue($('recordTimeIn'),r?.timeIn||'',true);setTimeSelectValue($('recordTimeOut'),r?.timeOut||'',true);$('recordRemarks').value=r?.remarks||'';$('recordHasOT').checked=!!r?.hasOT;setTimeSelectValue($('recordOTStart'),r?.otStart||'',true);setTimeSelectValue($('recordOTEnd'),r?.otEnd||'',true);$('deleteRecordBtn').classList.toggle('hidden',!r);$('attendanceModal').classList.remove('hidden');updateFields();if(!r&&profile.dayOffs.includes(parseLocalDate($('recordDate').value).getDay())){$('recordStatus').value='Day Off';updateFields()}}
+function switchView(id){if(id==='usersView'&&!isAdmin())return;document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===id));document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.view===id));if(id==='attendanceView')renderAttendance();if(id==='historyView')renderHistory();if(id==='profileView')renderProfile();if(id==='usersView')loadAdminUsers()}
+function openModal(id=null){const r=id?records.find(x=>x.id===id):null;$('recordId').value=r?.id||'';$('modalTitle').textContent=r?'Edit Attendance':'Manual Add Attendance';$('recordDate').max=localDateStr();$('recordDate').value=r?.date||localDateStr();$('recordStatus').value=r?.status==='Late'?'Present':(r?.status||'Present');$('recordTimeIn').value=rawTime(r?.timeIn||'');$('recordTimeOut').value=rawTime(r?.timeOut||'');$('recordRemarks').value=r?.remarks||'';$('recordHasOT').checked=!!r?.hasOT;$('recordOTStart').value=rawTime(r?.otStart||'');$('recordOTEnd').value=rawTime(r?.otEnd||'');$('deleteRecordBtn').classList.toggle('hidden',!r);$('attendanceModal').classList.remove('hidden');updateFields();if(!r&&profile.dayOffs.includes(parseLocalDate($('recordDate').value).getDay())){$('recordStatus').value='Day Off';updateFields()}}
 function closeModal(){$('attendanceModal').classList.add('hidden')} function updateFields(){const show=['Present','Half Day'].includes($('recordStatus').value);$('timeFields').classList.toggle('hidden',!show);const lp=$('latePreview');if(show&&$('recordStatus').value==='Present'&&$('recordTimeIn').value){const l=lateM($('recordTimeIn').value);lp.textContent=l?`Automatic status: Late by ${l} minute${l>1?'s':''}`:'Automatic status: Present / On time';lp.classList.remove('hidden')}else lp.classList.add('hidden');$('otFields').classList.toggle('hidden',!$('recordHasOT').checked);if($('recordHasOT').checked)$('otPreview').textContent=`OT Total: ${fmtOT(otM($('recordOTStart').value,$('recordOTEnd').value))} hrs`}
 
 async function loadCloud(){setSync('syncing','Syncing');const {data:p,error:pe}=await sb.from('profiles').select('*').eq('user_id',user.id).maybeSingle();if(pe)throw pe;if(!p){setSync('error','Account missing');const err=new Error('ACCOUNT_PROFILE_NOT_FOUND');err.code='ACCOUNT_PROFILE_NOT_FOUND';throw err}profile=normalizeProfile(p);const {data:r,error:re}=await sb.from('attendance').select('*').order('date',{ascending:false});if(re)throw re;records=(r||[]).map(appRecord);setSync('','Synced')}
@@ -84,12 +200,15 @@ async function handleMissingAccount(){try{await sb.auth.signOut()}catch(_e){}use
 $('authSwitchBtn').onclick=()=>{authMode=authMode==='login'?'register':'login';const reg=authMode==='register';$('registerFields').classList.toggle('hidden',!reg);$('passwordRules').classList.toggle('hidden',!reg);$('authTitle').textContent=reg?'Create your account':'Welcome back';$('authSubtitle').textContent=reg?'Your attendance will sync securely across devices.':'Sign in to sync your attendance across devices.';$('authSubmitBtn').textContent=reg?'Create Account':'Login';$('authSwitchBtn').textContent=reg?'Already have an account? Login':'Create an account';$('authPassword').autocomplete=reg?'new-password':'current-password';$('authPassword').placeholder=reg?'Use a strong password':'Enter your password';$('authMessage').classList.add('hidden');renderPasswordRules()};
 $('togglePasswordBtn').onclick=()=>{const p=$('authPassword'),show=p.type==='password';p.type=show?'text':'password';$('togglePasswordBtn').setAttribute('aria-label',show?'Hide password':'Show password');$('togglePasswordBtn').title=show?'Hide password':'Show password';$('passwordEyeIcon').textContent=show?'🙈':'👁'};
 $('authPassword').addEventListener('input',()=>{if(authMode==='register')renderPasswordRules()});
-$('authSubmitBtn').onclick=async()=>{if(!configReady){$('authMessage').textContent='Supabase is not configured yet. Open js/config.js and add your Project URL and publishable/anon key.';$('authMessage').classList.remove('hidden');return}const email=$('authEmail').value.trim(),password=$('authPassword').value;if(!email||!password)return toast('Enter your email and password');$('authSubmitBtn').disabled=true;try{let res;if(authMode==='register'){const name=$('registerName').value.trim(),position=$('registerPosition').value.trim();if(!name||!position)throw new Error('Full Name and Position are required');if(!passwordIsStrong(password)){renderPasswordRules();throw new Error('Password does not meet all security requirements.')}res=await sb.auth.signUp({email,password,options:{data:{name,position}}});if(res.error)throw res.error;if(!res.data.session){$('authMessage').textContent='Account created. Check your email to confirm, then login.';$('authMessage').classList.remove('hidden');return}}else{res=await sb.auth.signInWithPassword({email,password});if(res.error)throw res.error}user=res.data.user||res.data.session?.user;await loadCloud();showMain()}catch(e){if(e?.code==='ACCOUNT_PROFILE_NOT_FOUND'||e?.message==='ACCOUNT_PROFILE_NOT_FOUND'){await handleMissingAccount()}else{$('authMessage').textContent=e.message||'Authentication failed';$('authMessage').classList.remove('hidden')}}finally{$('authSubmitBtn').disabled=false}};
-async function logoutUser(){
+$('authSubmitBtn').onclick=async()=>{if(!configReady){$('authMessage').textContent='Supabase is not configured yet. Open js/config.js and add your Project URL and publishable/anon key.';$('authMessage').classList.remove('hidden');return}const email=$('authEmail').value.trim(),password=$('authPassword').value;if(!email||!password)return toast('Enter your email and password');$('authSubmitBtn').disabled=true;try{let res;if(authMode==='register'){const name=$('registerName').value.trim(),position=$('registerPosition').value.trim();if(!name||!position)throw new Error('Full Name and Position are required');if(!passwordIsStrong(password)){renderPasswordRules();throw new Error('Password does not meet all security requirements.')}res=await sb.auth.signUp({email,password,options:{data:{name,position}}});if(res.error)throw res.error;if(!res.data.session){$('authMessage').textContent='Account created. Check your email to confirm, then login.';$('authMessage').classList.remove('hidden');return}}else{res=await sb.auth.signInWithPassword({email,password});if(res.error)throw res.error}user=res.data.user||res.data.session?.user;noteActivity(true);await loadCloud();showMain()}catch(e){if(e?.code==='ACCOUNT_PROFILE_NOT_FOUND'||e?.message==='ACCOUNT_PROFILE_NOT_FOUND'){await handleMissingAccount()}else{$('authMessage').textContent=e.message||'Authentication failed';$('authMessage').classList.remove('hidden')}}finally{$('authSubmitBtn').disabled=false}};
+async function logoutUser(idle=false){
+  const oldKey=idleKey();stopIdleSession();
   try{await sb.auth.signOut()}catch(_e){}
+  localStorage.removeItem(oldKey);
   user=null;profile=null;records=[];cutoffOffset=0;
   $('authPassword').value='';
   showAuth();
+  if(idle){$('authMessage').textContent='You were logged out after 2 minutes of inactivity.';$('authMessage').classList.remove('hidden')}
 }
 $('logoutBtn').onclick=logoutUser;
 if($('topLogoutBtn'))$('topLogoutBtn').onclick=logoutUser;
@@ -103,6 +222,7 @@ $('attendanceSearch').oninput=renderAttendance;$('statusFilter').onchange=render
 async function changeTheme(t){profile.theme=t;applyTheme(t);try{await saveProfileCloud();toast(`${t==='dark'?'Dark':'Light'} theme applied`)}catch(e){toast(e.message)}}$('lightThemeBtn').onclick=()=>changeTheme('light');$('darkThemeBtn').onclick=()=>changeTheme('dark');
 function setShift(t){profile.shiftType=t;$('profileShiftStart').value=t==='night'?'18:00':'06:00';$('profileShiftEnd').value=t==='night'?'03:00':'15:00';renderProfile()} $('dayShiftBtn').onclick=()=>setShift('day');$('nightShiftBtn').onclick=()=>setShift('night');
 $('saveScheduleBtn').onclick=async()=>{profile.shiftStart=$('profileShiftStart').value;profile.shiftEnd=$('profileShiftEnd').value;profile.dayOffs=[...document.querySelectorAll('#dayOffPicker input:checked')].map(x=>Number(x.value));try{await saveProfileCloud();renderAll();toast('Schedule saved')}catch(e){toast(e.message)}};
+if($('userSearch'))$('userSearch').oninput=renderAdminUsers;if($('closeAdminUserModalBtn'))$('closeAdminUserModalBtn').onclick=closeAdminUserModal;if($('adminCancelUserBtn'))$('adminCancelUserBtn').onclick=closeAdminUserModal;if($('adminSaveUserBtn'))$('adminSaveUserBtn').onclick=saveAdminUser;if($('adminDeleteUserBtn'))$('adminDeleteUserBtn').onclick=deleteAdminUserProfile;if($('adminEditShiftType'))$('adminEditShiftType').onchange=()=>{const t=$('adminEditShiftType').value;if(t==='night'){$('adminEditShiftStart').value='18:00';$('adminEditShiftEnd').value='03:00'}else{$('adminEditShiftStart').value='06:00';$('adminEditShiftEnd').value='15:00'}};if($('adminAddUserBtn'))$('adminAddUserBtn').onclick=openAdminAddUserModal;if($('closeAdminAddUserModalBtn'))$('closeAdminAddUserModalBtn').onclick=closeAdminAddUserModal;if($('adminCancelAddUserBtn'))$('adminCancelAddUserBtn').onclick=closeAdminAddUserModal;if($('adminCreateUserBtn'))$('adminCreateUserBtn').onclick=createAdminUser;if($('adminNewPasswordToggle'))$('adminNewPasswordToggle').onclick=toggleAdminNewPassword;if($('adminResetPasswordToggle'))$('adminResetPasswordToggle').onclick=toggleAdminResetPassword;if($('adminNewShiftType'))$('adminNewShiftType').onchange=()=>{const t=$('adminNewShiftType').value;if(t==='night'){$('adminNewShiftStart').value='18:00';$('adminNewShiftEnd').value='03:00'}else{$('adminNewShiftStart').value='06:00';$('adminNewShiftEnd').value='15:00'}};
 $('exportBtn').onclick=()=>{const blob=new Blob([JSON.stringify({version:8,profile,records},null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`attendance-backup-${localDateStr()}.json`;a.click();URL.revokeObjectURL(a.href)};
 $('importInput').onchange=async e=>{const f=e.target.files?.[0];if(!f)return;try{const d=JSON.parse(await f.text());if(!d.profile||!Array.isArray(d.records))throw new Error('Invalid backup');profile={...profile,...d.profile};await saveProfileCloud();for(const r of d.records){r.id=r.id||uid();await saveRecordCloud(r)}await loadCloud();renderAll();toast('Backup imported')}catch(err){toast(err.message)}e.target.value=''};
 $('resetBtn').onclick=async()=>{if(!confirm('Delete all attendance records for this account?'))return;const {error}=await sb.from('attendance').delete().eq('user_id',user.id);if(error)return toast(error.message);records=[];renderAll();toast('Attendance cleared')};
