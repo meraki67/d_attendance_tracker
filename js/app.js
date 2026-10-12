@@ -10,11 +10,32 @@ const sb=configReady?window.supabase.createClient(cfg.url,cfg.key,{
   }
 }):null;
 let user=null, profile=null, records=[], cutoffOffset=0, authMode='login', adminUsers=[];
+const THEME_HINT_KEY='attendanceThemeHint';
+const SIGNED_IN_HINT_KEY='attendanceSignedInHint';
+function userThemeKey(id){return `attendanceTheme:${id}`}
+function getImmediateTheme(){
+  return localStorage.getItem(SIGNED_IN_HINT_KEY)==='1'
+    ? (localStorage.getItem(THEME_HINT_KEY)||'light')
+    : 'light';
+}
+
 const IDLE_TIMEOUT_MS=2*60*1000;
 let idleInterval=null,lastActivityWrite=0;
 function rawTime(t){return t?String(t).slice(0,5):''}
 function initTimeSelects(){}
-function applyTheme(theme='light',saveLocal=true){const t=theme==='dark'?'dark':'light';document.documentElement.dataset.theme=t;document.body.dataset.theme=t;const meta=$('themeColorMeta');if(meta)meta.content=t==='dark'?'#0b1220':'#f5f7fb';if(saveLocal)localStorage.setItem('attendanceTheme',t);document.querySelectorAll('.theme-option').forEach(b=>b.classList.toggle('active',b.dataset.theme===t));if($('themeSummary'))$('themeSummary').textContent=t==='dark'?'Dark':'Light'}
+function applyTheme(theme='light',saveLocal=true){
+  const t=theme==='dark'?'dark':'light';
+  document.documentElement.dataset.theme=t;
+  document.body.dataset.theme=t;
+  const meta=$('themeColorMeta');
+  if(meta)meta.content=t==='dark'?'#0b1220':'#f5f7fb';
+  if(saveLocal&&user){
+    localStorage.setItem(userThemeKey(user.id),t);
+    localStorage.setItem(THEME_HINT_KEY,t);
+  }
+  document.querySelectorAll('.theme-option').forEach(b=>b.classList.toggle('active',b.dataset.theme===t));
+  if($('themeSummary'))$('themeSummary').textContent=t==='dark'?'Dark':'Light';
+}
 function renderAvatar(){if(!profile)return;const name=profile.name||'User',data=profile.avatarData||'';if($('profileAvatarName'))$('profileAvatarName').textContent=name;if($('profileAvatarInitials'))$('profileAvatarInitials').textContent=initials(name);if($('headerAvatarInitials'))$('headerAvatarInitials').textContent=initials(name);const pairs=[[$('profileAvatarImg'),$('profileAvatarInitials')],[$('headerAvatarImg'),$('headerAvatarInitials')]];pairs.forEach(([img,ini])=>{if(!img||!ini)return;if(data){img.src=data;img.classList.remove('hidden');ini.classList.add('hidden')}else{img.removeAttribute('src');img.classList.add('hidden');ini.classList.remove('hidden')}})}
 async function compressAvatar(file){if(!file)return'';if(!/^image\/(png|jpeg|webp)$/.test(file.type))throw new Error('Please choose a JPG, PNG, or WebP image.');if(file.size>8*1024*1024)throw new Error('Image is too large. Maximum is 8 MB.');const data=await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(file)});const img=await new Promise((resolve,reject)=>{const i=new Image();i.onload=()=>resolve(i);i.onerror=reject;i.src=data});const size=256,canvas=document.createElement('canvas');canvas.width=size;canvas.height=size;const ctx=canvas.getContext('2d');const side=Math.min(img.width,img.height),sx=(img.width-side)/2,sy=(img.height-side)/2;ctx.drawImage(img,sx,sy,side,side,0,0,size,size);return canvas.toDataURL('image/jpeg',.82)}
 
@@ -163,8 +184,28 @@ function toggleAdminNewPassword(){
   $('adminNewPasswordToggle').textContent=show?'Hide':'Show';$('adminNewPasswordToggle').setAttribute('aria-label',show?'Hide password':'Show password')
 }
 
-function showAuth(){stopIdleSession();hideAuthLoading();$('authScreen').classList.remove('hidden');$('mainApp').classList.add('hidden')}
-function showMain(){hideAuthLoading();$('authScreen').classList.add('hidden');$('mainApp').classList.remove('hidden');renderAll();startIdleSession()}
+function showAuth(){
+  stopIdleSession();
+  localStorage.removeItem(SIGNED_IN_HINT_KEY);
+  applyTheme('light',false);
+  hideAuthLoading();
+  $('authScreen').classList.remove('hidden');
+  $('mainApp').classList.add('hidden');
+}
+function showMain(){
+  const saved=profile?.theme||localStorage.getItem(userThemeKey(user?.id))||'light';
+  applyTheme(saved,false);
+  if(user){
+    localStorage.setItem(userThemeKey(user.id),saved);
+    localStorage.setItem(THEME_HINT_KEY,saved);
+    localStorage.setItem(SIGNED_IN_HINT_KEY,'1');
+  }
+  hideAuthLoading();
+  $('authScreen').classList.add('hidden');
+  $('mainApp').classList.remove('hidden');
+  renderAll();
+  startIdleSession();
+}
 function greeting(){const h=new Date().getHours();return h<12?'GOOD MORNING':h<18?'GOOD AFTERNOON':'GOOD EVENING'}
 function initials(n='U'){return n.split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join('').toUpperCase()}
 function renderHeader(){$('greeting').textContent=greeting();$('headerName').textContent=profile.name;$('headerPosition').textContent=profile.position;renderAvatar()}
@@ -191,8 +232,46 @@ function switchView(id){if(id==='usersView'&&!isAdmin())return;document.querySel
 function openModal(id=null){const r=id?records.find(x=>x.id===id):null;$('recordId').value=r?.id||'';$('modalTitle').textContent=r?'Edit Attendance':'Manual Add Attendance';$('recordDate').max=localDateStr();$('recordDate').value=r?.date||localDateStr();$('recordStatus').value=r?.status==='Late'?'Present':(r?.status||'Present');$('recordTimeIn').value=rawTime(r?.timeIn||'');$('recordTimeOut').value=rawTime(r?.timeOut||'');$('recordRemarks').value=r?.remarks||'';$('recordHasOT').checked=!!r?.hasOT;$('recordOTStart').value=rawTime(r?.otStart||'');$('recordOTEnd').value=rawTime(r?.otEnd||'');$('deleteRecordBtn').classList.toggle('hidden',!r);$('attendanceModal').classList.remove('hidden');updateFields();if(!r&&profile.dayOffs.includes(parseLocalDate($('recordDate').value).getDay())){$('recordStatus').value='Day Off';updateFields()}}
 function closeModal(){$('attendanceModal').classList.add('hidden')} function updateFields(){const show=['Present','Half Day'].includes($('recordStatus').value);$('timeFields').classList.toggle('hidden',!show);const lp=$('latePreview');if(show&&$('recordStatus').value==='Present'&&$('recordTimeIn').value){const l=lateM($('recordTimeIn').value);lp.textContent=l?`Automatic status: Late by ${l} minute${l>1?'s':''}`:'Automatic status: Present / On time';lp.classList.remove('hidden')}else lp.classList.add('hidden');$('otFields').classList.toggle('hidden',!$('recordHasOT').checked);if($('recordHasOT').checked)$('otPreview').textContent=`OT Total: ${fmtOT(otM($('recordOTStart').value,$('recordOTEnd').value))} hrs`}
 
-async function loadCloud(){setSync('syncing','Syncing');const {data:p,error:pe}=await sb.from('profiles').select('*').eq('user_id',user.id).maybeSingle();if(pe)throw pe;if(!p){setSync('error','Account missing');const err=new Error('ACCOUNT_PROFILE_NOT_FOUND');err.code='ACCOUNT_PROFILE_NOT_FOUND';throw err}profile=normalizeProfile(p);const {data:r,error:re}=await sb.from('attendance').select('*').order('date',{ascending:false});if(re)throw re;records=(r||[]).map(appRecord);setSync('','Synced')}
-async function saveProfileCloud(){setSync('syncing','Saving');const payload={user_id:user.id,name:profile.name,position:profile.position,shift_type:profile.shiftType,shift_start:profile.shiftStart,shift_end:profile.shiftEnd,day_offs:profile.dayOffs,avatar_data:profile.avatarData||'',theme:profile.theme||'light',updated_at:new Date().toISOString()};const {error}=await sb.from('profiles').upsert(payload,{onConflict:'user_id'});if(error)throw error;setSync('','Synced')}
+async function loadCloud(){
+  setSync('syncing','Syncing');
+  const {data:p,error:pe}=await sb.from('profiles').select('*').eq('user_id',user.id).maybeSingle();
+  if(pe)throw pe;
+  if(!p){
+    setSync('error','Account missing');
+    const err=new Error('ACCOUNT_PROFILE_NOT_FOUND');
+    err.code='ACCOUNT_PROFILE_NOT_FOUND';
+    throw err
+  }
+  profile=normalizeProfile(p);
+  localStorage.setItem(userThemeKey(user.id),profile.theme||'light');
+  localStorage.setItem(THEME_HINT_KEY,profile.theme||'light');
+  const {data:r,error:re}=await sb.from('attendance').select('*').order('date',{ascending:false});
+  if(re)throw re;
+  records=(r||[]).map(appRecord);
+  setSync('','Synced')
+}
+async function saveProfileCloud(){
+  setSync('syncing','Saving');
+  const payload={
+    name:profile.name,
+    position:profile.position,
+    shift_type:profile.shiftType,
+    shift_start:profile.shiftStart,
+    shift_end:profile.shiftEnd,
+    day_offs:profile.dayOffs,
+    avatar_data:profile.avatarData||'',
+    theme:profile.theme||'light',
+    updated_at:new Date().toISOString()
+  };
+  const {data,error}=await sb.from('profiles')
+    .update(payload)
+    .eq('user_id',user.id)
+    .select('user_id')
+    .maybeSingle();
+  if(error)throw error;
+  if(!data)throw new Error('Profile update was blocked or the profile no longer exists.');
+  setSync('','Synced')
+}
 async function saveRecordCloud(item){setSync('syncing','Saving');const {error}=await sb.from('attendance').upsert(dbRecord(item),{onConflict:'user_id,date'});if(error)throw error;setSync('','Synced')}
 async function deleteRecordCloud(id){setSync('syncing','Saving');const {error}=await sb.from('attendance').delete().eq('id',id);if(error)throw error;setSync('','Synced')}
 
@@ -228,7 +307,7 @@ $('importInput').onchange=async e=>{const f=e.target.files?.[0];if(!f)return;try
 $('resetBtn').onclick=async()=>{if(!confirm('Delete all attendance records for this account?'))return;const {error}=await sb.from('attendance').delete().eq('user_id',user.id);if(error)return toast(error.message);records=[];renderAll();toast('Attendance cleared')};
 
 (async function init(){
-  applyTheme(localStorage.getItem('attendanceTheme')||'light',false);
+  applyTheme(getImmediateTheme(),false);
   initTimeSelects();
   if(!configReady){
     showAuth();
