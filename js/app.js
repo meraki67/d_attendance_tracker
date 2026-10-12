@@ -1,7 +1,14 @@
 const $=id=>document.getElementById(id);
 const cfg=window.SUPABASE_CONFIG||{};
 const configReady=cfg.url && cfg.key && !cfg.url.includes('PASTE_') && !cfg.key.includes('PASTE_');
-const sb=configReady?window.supabase.createClient(cfg.url,cfg.key):null;
+const sb=configReady?window.supabase.createClient(cfg.url,cfg.key,{
+  auth:{
+    persistSession:true,
+    autoRefreshToken:true,
+    detectSessionInUrl:true,
+    storage:window.localStorage
+  }
+}):null;
 let user=null, profile=null, records=[], cutoffOffset=0, authMode='login';
 const TIME_STEP=5;
 function militaryTimes(step=TIME_STEP){const out=[];for(let m=0;m<1440;m+=step)out.push(`${pad(Math.floor(m/60))}:${pad(m%60)}`);return out}
@@ -78,7 +85,14 @@ $('authSwitchBtn').onclick=()=>{authMode=authMode==='login'?'register':'login';c
 $('togglePasswordBtn').onclick=()=>{const p=$('authPassword'),show=p.type==='password';p.type=show?'text':'password';$('togglePasswordBtn').setAttribute('aria-label',show?'Hide password':'Show password');$('togglePasswordBtn').title=show?'Hide password':'Show password';$('passwordEyeIcon').textContent=show?'🙈':'👁'};
 $('authPassword').addEventListener('input',()=>{if(authMode==='register')renderPasswordRules()});
 $('authSubmitBtn').onclick=async()=>{if(!configReady){$('authMessage').textContent='Supabase is not configured yet. Open js/config.js and add your Project URL and publishable/anon key.';$('authMessage').classList.remove('hidden');return}const email=$('authEmail').value.trim(),password=$('authPassword').value;if(!email||!password)return toast('Enter your email and password');$('authSubmitBtn').disabled=true;try{let res;if(authMode==='register'){const name=$('registerName').value.trim(),position=$('registerPosition').value.trim();if(!name||!position)throw new Error('Full Name and Position are required');if(!passwordIsStrong(password)){renderPasswordRules();throw new Error('Password does not meet all security requirements.')}res=await sb.auth.signUp({email,password,options:{data:{name,position}}});if(res.error)throw res.error;if(!res.data.session){$('authMessage').textContent='Account created. Check your email to confirm, then login.';$('authMessage').classList.remove('hidden');return}}else{res=await sb.auth.signInWithPassword({email,password});if(res.error)throw res.error}user=res.data.user||res.data.session?.user;await loadCloud();showMain()}catch(e){if(e?.code==='ACCOUNT_PROFILE_NOT_FOUND'||e?.message==='ACCOUNT_PROFILE_NOT_FOUND'){await handleMissingAccount()}else{$('authMessage').textContent=e.message||'Authentication failed';$('authMessage').classList.remove('hidden')}}finally{$('authSubmitBtn').disabled=false}};
-$('logoutBtn').onclick=async()=>{await sb.auth.signOut();user=null;profile=null;records=[];showAuth()};
+async function logoutUser(){
+  try{await sb.auth.signOut()}catch(_e){}
+  user=null;profile=null;records=[];cutoffOffset=0;
+  $('authPassword').value='';
+  showAuth();
+}
+$('logoutBtn').onclick=logoutUser;
+if($('topLogoutBtn'))$('topLogoutBtn').onclick=logoutUser;
 $('profileQuickBtn').onclick=()=>switchView('profileView');document.querySelectorAll('.nav-item').forEach(n=>n.onclick=()=>switchView(n.dataset.view));
 const mainAppEl=$('mainApp'),sidebarToggle=$('sidebarToggle');
 function applySidebarState(collapsed){mainAppEl.classList.toggle('sidebar-collapsed',collapsed);if(sidebarToggle){sidebarToggle.classList.toggle('is-collapsed',collapsed);sidebarToggle.setAttribute('aria-label',collapsed?'Expand sidebar':'Collapse sidebar');sidebarToggle.title=collapsed?'Expand sidebar':'Collapse sidebar'}}
@@ -93,4 +107,54 @@ $('exportBtn').onclick=()=>{const blob=new Blob([JSON.stringify({version:8,profi
 $('importInput').onchange=async e=>{const f=e.target.files?.[0];if(!f)return;try{const d=JSON.parse(await f.text());if(!d.profile||!Array.isArray(d.records))throw new Error('Invalid backup');profile={...profile,...d.profile};await saveProfileCloud();for(const r of d.records){r.id=r.id||uid();await saveRecordCloud(r)}await loadCloud();renderAll();toast('Backup imported')}catch(err){toast(err.message)}e.target.value=''};
 $('resetBtn').onclick=async()=>{if(!confirm('Delete all attendance records for this account?'))return;const {error}=await sb.from('attendance').delete().eq('user_id',user.id);if(error)return toast(error.message);records=[];renderAll();toast('Attendance cleared')};
 
-(async function init(){applyTheme(localStorage.getItem('attendanceTheme')||'light',false);initTimeSelects();if(!configReady){showAuth();$('authMessage').textContent='Setup required: add your Supabase Project URL and publishable/anon key in js/config.js.';$('authMessage').classList.remove('hidden');return}const {data:{session}}=await sb.auth.getSession();if(session){user=session.user;try{await loadCloud();showMain()}catch(e){if(e?.code==='ACCOUNT_PROFILE_NOT_FOUND'||e?.message==='ACCOUNT_PROFILE_NOT_FOUND')await handleMissingAccount();else{showAuth();$('authMessage').textContent=e.message;$('authMessage').classList.remove('hidden')}}}else showAuth();sb.auth.onAuthStateChange(async(_event,session)=>{if(session&&!user){user=session.user;try{await loadCloud();showMain()}catch(e){if(e?.code==='ACCOUNT_PROFILE_NOT_FOUND'||e?.message==='ACCOUNT_PROFILE_NOT_FOUND')await handleMissingAccount();else{showAuth();$('authMessage').textContent=e.message||'Unable to load account';$('authMessage').classList.remove('hidden')}}}})})();
+(async function init(){
+  applyTheme(localStorage.getItem('attendanceTheme')||'light',false);
+  initTimeSelects();
+  if(!configReady){
+    showAuth();
+    $('authMessage').textContent='Setup required: add your Supabase Project URL and publishable/anon key in js/config.js.';
+    $('authMessage').classList.remove('hidden');
+    return;
+  }
+
+  try{
+    const {data:{session},error}=await sb.auth.getSession();
+    if(error)throw error;
+    if(session?.user){
+      user=session.user;
+      try{
+        await loadCloud();
+        showMain();
+      }catch(e){
+        if(e?.code==='ACCOUNT_PROFILE_NOT_FOUND'||e?.message==='ACCOUNT_PROFILE_NOT_FOUND')await handleMissingAccount();
+        else{showAuth();$('authMessage').textContent=e.message||'Unable to restore your session';$('authMessage').classList.remove('hidden')}
+      }
+    }else{
+      showAuth();
+    }
+  }catch(e){
+    showAuth();
+    $('authMessage').textContent=e.message||'Unable to restore your login session';
+    $('authMessage').classList.remove('hidden');
+  }
+
+  sb.auth.onAuthStateChange(async(event,session)=>{
+    if(event==='SIGNED_OUT'||!session){
+      user=null;profile=null;records=[];
+      showAuth();
+      return;
+    }
+    if(['SIGNED_IN','TOKEN_REFRESHED','INITIAL_SESSION','USER_UPDATED'].includes(event)){
+      if(!user||user.id!==session.user.id){
+        user=session.user;
+        try{
+          await loadCloud();
+          showMain();
+        }catch(e){
+          if(e?.code==='ACCOUNT_PROFILE_NOT_FOUND'||e?.message==='ACCOUNT_PROFILE_NOT_FOUND')await handleMissingAccount();
+          else{showAuth();$('authMessage').textContent=e.message||'Unable to load account';$('authMessage').classList.remove('hidden')}
+        }
+      }
+    }
+  });
+})();
